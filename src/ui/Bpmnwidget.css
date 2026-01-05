@@ -1,0 +1,143 @@
+/**
+ * Bpmnwidget.css
+ * 
+ * Main styles for the BPMN Widget container
+ * This file contains:
+ * - Widget container styles
+ * - Loading states
+ * - Error states
+ * - Basic layout
+ */
+
+/* ===================================
+   Widget Container
+   =================================== */
+
+.bpmn-widget {
+    width: 100%;
+    height: 100%;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+    color: #333;
+    box-sizing: border-box;
+}
+
+.bpmn-widget * {
+    box-sizing: border-box;
+}
+
+/* ===================================
+   Loading State
+   =================================== */
+
+.bpmn-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 400px;
+    background-color: #f9f9f9;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+}
+
+.bpmn-loading p {
+    margin: 16px 0 0 0;
+    color: #666;
+    font-size: 14px;
+}
+
+/* Loading Spinner Animation */
+.bpmn-loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #3498db;
+    border-radius: 50%;
+    animation: bpmn-spin 1s linear infinite;
+}
+
+@keyframes bpmn-spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* ===================================
+   Error State
+   =================================== */
+
+.bpmn-error {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 400px;
+    background-color: #fff3f3;
+    border: 1px solid #ffcccc;
+    border-radius: 4px;
+    padding: 20px;
+}
+
+.bpmn-error p {
+    margin: 0;
+    color: #d32f2f;
+    font-size: 14px;
+    text-align: center;
+}
+
+/* ===================================
+   Widget Preview (Studio Pro)
+   =================================== */
+
+.bpmn-widget-preview {
+    width: 100%;
+    height: 100%;
+    min-height: 400px;
+}
+
+/* ===================================
+   Responsive Design
+   =================================== */
+
+@media (max-width: 768px) {
+    .bpmn-widget {
+        font-size: 13px;
+    }
+}
+
+/* ===================================
+   Accessibility
+   =================================== */
+
+.bpmn-widget:focus {
+    outline: 2px solid #3498db;
+    outline-offset: 2px;
+}
+
+/* Screen reader only text */
+.bpmn-sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+}
+
+/* ===================================
+   Print Styles
+   =================================== */
+
+@media print {
+    .bpmn-widget {
+        background: white;
+    }
+    
+    .bpmn-loading,
+    .bpmn-error {
+        display: none;
+    }
+}
