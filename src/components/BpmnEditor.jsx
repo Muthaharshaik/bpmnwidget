@@ -5,6 +5,7 @@ import plusIcon from "../assets/plus.svg";
 import minusIcon from "../assets/minus.svg";
 import resetIcon from "../assets/fullscreen.svg";
 import downloadIcon from "../assets/download.svg";
+import jsPDF from "jspdf";
 
 /**
  * BpmnEditor Component
@@ -227,10 +228,108 @@ export const BpmnEditor = ({
         }
     };
 
+    /**
+     * Handle Download as PDF
+     * Converts SVG to PDF using jsPDF
+     */
     const handleDownloadPDF = async () => {
-        if (!modelerMethodsRef.current?.exportSVG) return;
+        if (!modelerMethodsRef.current?.exportSVG) {
+            return;
+        }
 
-    }
+        try {
+            setError(null);
+            
+            // Export the diagram as SVG
+            const svg = await modelerMethodsRef.current.exportSVG();
+            
+            // Create a temporary image to get SVG dimensions
+            const img = new Image();
+            const svgBlob = new Blob([svg], { type: 'image/svg+xml;charset=utf-8' });
+            const url = URL.createObjectURL(svgBlob);
+            
+            img.onload = () => {
+                try {
+                    // Get image dimensions
+                    const imgWidth = img.width;
+                    const imgHeight = img.height;
+                    
+                    // Calculate PDF dimensions (A4 size with margins)
+                    const pdfWidth = 210; // A4 width in mm
+                    const pdfHeight = 297; // A4 height in mm
+                    const margin = 10; // margin in mm
+                    
+                    // Calculate scaling to fit the image on the page
+                    const maxWidth = pdfWidth - (2 * margin);
+                    const maxHeight = pdfHeight - (2 * margin);
+                    
+                    let finalWidth = imgWidth;
+                    let finalHeight = imgHeight;
+                    
+                    // Scale down if image is larger than page
+                    const widthRatio = maxWidth / (imgWidth * 0.264583); // px to mm conversion
+                    const heightRatio = maxHeight / (imgHeight * 0.264583);
+                    const ratio = Math.min(widthRatio, heightRatio, 1);
+                    
+                    finalWidth = (imgWidth * 0.264583) * ratio;
+                    finalHeight = (imgHeight * 0.264583) * ratio;
+                    
+                    // Determine orientation based on dimensions
+                    const orientation = finalWidth > finalHeight ? 'landscape' : 'portrait';
+                    
+                    // Create PDF
+                    const pdf = new jsPDF({
+                        orientation: orientation,
+                        unit: 'mm',
+                        format: 'a4'
+                    });
+                    
+                    // Center the image on the page
+                    const x = (pdf.internal.pageSize.getWidth() - finalWidth) / 2;
+                    const y = (pdf.internal.pageSize.getHeight() - finalHeight) / 2;
+                    
+                    // Convert SVG to data URL
+                    const canvas = document.createElement('canvas');
+                    canvas.width = imgWidth;
+                    canvas.height = imgHeight;
+                    const ctx = canvas.getContext('2d');
+                    
+                    // Draw image on canvas
+                    ctx.drawImage(img, 0, 0);
+                    
+                    // Get image data as PNG
+                    const imgData = canvas.toDataURL('image/png');
+                    
+                    // Add image to PDF
+                    pdf.addImage(imgData, 'PNG', x, y, finalWidth, finalHeight);
+                    
+                    // Save the PDF
+                    pdf.save('diagram.pdf');
+                    
+                    // Cleanup
+                    URL.revokeObjectURL(url);
+                    
+                } catch (err) {
+                    console.error('Error creating PDF:', err);
+                    setError('Failed to generate PDF. Please try again.');
+                    URL.revokeObjectURL(url);
+                }
+            };
+            
+            img.onerror = () => {
+                console.error('Error loading SVG image');
+                setError('Failed to load diagram for PDF generation');
+                URL.revokeObjectURL(url);
+            };
+            
+            img.src = url;
+            
+        } catch (err) {
+            console.error("Error downloading PDF:", err);
+            setError("Failed to download diagram as PDF");
+        }
+    };
+
     /**
      * Handle file open from local filesystem
      */
