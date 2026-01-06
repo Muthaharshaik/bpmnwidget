@@ -22,7 +22,7 @@ const DEFAULT_BPMN_XML = `<?xml version="1.0" encoding="UTF-8"?>
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
                   id="Definitions_1" 
                   targetNamespace="http://bpmn.io/schema/bpmn">
-  <bpmn:process id="Process_1" isExecutable="false">
+  <bpmn:process id="Main_Process" isExecutable="false">
     <bpmn:startEvent id="StartEvent_1"/>
   </bpmn:process>
   <bpmndi:BPMNDiagram id="BPMNDiagram_1">
@@ -40,34 +40,24 @@ export const BpmnModelerComponent = ({
     readOnly = false,
     onModelerReady 
 }) => {
-    // Ref to hold the DOM container for the BPMN canvas
     const containerRef = useRef(null);
-    
-    // Ref to hold the modeler instance (persists across re-renders)
     const modelerRef = useRef(null);
+    const lastImportedXmlRef = useRef(null);
 
     /**
-     * Initialize the BPMN Modeler
-     * This runs once when the component mounts
+     * Initialize the BPMN Modeler (runs once on mount)
      */
     useEffect(() => {
         if (!containerRef.current) return;
 
-        // Create a new BPMN Modeler instance
         const modeler = new BpmnModeler({
-            container: containerRef.current,
-            keyboard: {
-                bindTo: document
-            },
-            // Additional options can be added here
-            // For example: height, width, additionalModules, etc.
+            container: containerRef.current
         });
 
-        // Store the modeler instance in ref
         modelerRef.current = modeler;
 
-        // Load the initial diagram
         const xmlToLoad = initialXml || DEFAULT_BPMN_XML;
+        lastImportedXmlRef.current = xmlToLoad;
         
         modeler.importXML(xmlToLoad)
             .then(({ warnings }) => {
@@ -75,24 +65,29 @@ export const BpmnModelerComponent = ({
                     console.warn("BPMN Import Warnings:", warnings);
                 }
 
-                // Get the canvas and zoom to fit the diagram
                 const canvas = modeler.get("canvas");
+                const eventBus = modeler.get("eventBus");
+
+                // Listen for subprocess drill-down navigation
+                eventBus.on('root.set', function() {
+                });
+
                 canvas.zoom("fit-viewport");
 
-                // If read-only mode, disable editing
+                // Handle read-only mode
                 if (readOnly) {
-                    const modeling = modeler.get("modeling");
-                    if (modeling) {
-                        // This prevents editing in read-only mode
-                        modeler.get("eventBus").on("element.click", 100000, (event) => {
-                            return false;
-                        });
-                    }
+                    modeler.get("eventBus").on("element.click", 100000, () => {
+                        return false;
+                    });
                 }
 
-                // Notify parent component that modeler is ready
+                // Notify parent that modeler is ready
                 if (onModelerReady) {
-                    onModelerReady(modeler);
+                    onModelerReady({
+                        exportXML,
+                        exportSVG,
+                        getModeler: () => modelerRef.current
+                    });
                 }
             })
             .catch((err) => {
@@ -102,37 +97,46 @@ export const BpmnModelerComponent = ({
                 }
             });
 
-        // Cleanup function: destroy modeler when component unmounts
+        // Cleanup on unmount
         return () => {
             if (modelerRef.current) {
                 modelerRef.current.destroy();
             }
         };
-    }, []); // Empty dependency array = runs once on mount
+    }, []); // Empty deps = runs once
 
     /**
-     * Update diagram when initialXml changes
-     * This effect handles updates to the diagram after initial load
-    */
+     * Handle XML updates (for file opens and diagram switches)
+     * CRITICAL: Only re-import if XML actually changed
+     */
     useEffect(() => {
-    if (!modelerRef.current || !initialXml) return;
+        if (!modelerRef.current) return;
+        if (!initialXml) return;
+        
+        // Skip if XML hasn't changed (prevents unwanted re-imports)
+        if (initialXml === lastImportedXmlRef.current) {
+            return;
+        }
 
-    modelerRef.current.importXML(initialXml)
-        .then(({ warnings }) => {
-            if (warnings.length) {
-                console.warn("BPMN Import Warnings:", warnings);
-            }
-            
+        console.log("Importing new diagram XML");
+        lastImportedXmlRef.current = initialXml;
+
+        modelerRef.current.importXML(initialXml)
+            .then(({ warnings }) => {
+                if (warnings.length) {
+                    console.warn("BPMN Import Warnings:", warnings);
+                }
+                
             // Just import - no zoom manipulation
             // Let the diagram render at its saved position
             
-        })
-        .catch((err) => {
-            console.error("Error updating BPMN diagram:", err);
-            if (onError) {
-                onError(err);
-            }
-        });
+            })
+            .catch((err) => {
+                console.error("Error updating BPMN diagram:", err);
+                if (onError) {
+                    onError(err);
+                }
+            });
     }, [initialXml, onError]);
     /**
      * Method to export the current diagram as XML
@@ -157,8 +161,8 @@ export const BpmnModelerComponent = ({
     }, []);
 
     /**
-     * Method to export diagram as SVG image
-     * Useful for generating previews or thumbnails
+     * Export current diagram as SVG with full diagram bounds
+     * This ensures the entire diagram is captured, not just visible viewport
      */
     const exportSVG = useCallback(() => {
         return new Promise((resolve, reject) => {
@@ -169,7 +173,7 @@ export const BpmnModelerComponent = ({
 
             modelerRef.current.saveSVG()
                 .then(({ svg }) => {
-                    resolve(svg);
+                        resolve(svg);
                 })
                 .catch((err) => {
                     console.error("Error exporting BPMN SVG:", err);
@@ -177,17 +181,6 @@ export const BpmnModelerComponent = ({
                 });
         });
     }, []);
-
-    // Expose methods to parent component via ref
-    useEffect(() => {
-        if (onModelerReady && modelerRef.current) {
-            onModelerReady({
-                exportXML,
-                exportSVG,
-                getModeler: () => modelerRef.current
-            });
-        }
-    }, [exportXML, exportSVG, onModelerReady]);
 
     return (
         <div 

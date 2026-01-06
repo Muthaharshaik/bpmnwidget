@@ -68,7 +68,7 @@ export function Bpmnwidget(props) {
         if (onSaveAction && onSaveAction.canExecute) {
             onSaveAction.execute();
         }
-    }, [bpmnXML, onSaveAction]);
+    }, [bpmnXML, previewImageAttr, onSaveAction]);
 
     /**
      * Handle Cancel
