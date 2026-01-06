@@ -24,6 +24,7 @@ import "./ui/bpmn-styles.css";
 export function Bpmnwidget(props) {
     const {
         bpmnXML,
+        previewImageAttr,
         onSaveAction,
         onCancelAction,
         readOnly,
@@ -54,12 +55,15 @@ export function Bpmnwidget(props) {
      * 2. Update Mendix attribute with new XML
      * 3. Execute Mendix onSaveAction
      */
-    const handleSave = useCallback((xml) => {
+    const handleSave = useCallback((xml, previewImage) => {
         // Update the Mendix attribute with new XML
         if (bpmnXML && bpmnXML.status === "available") {
             bpmnXML.setValue(xml);
         }
 
+        if (previewImageAttr && previewImageAttr.status === "available") {
+            previewImageAttr.setValue(previewImage);
+        }
         // Execute the Mendix action (microflow/nanoflow)
         if (onSaveAction && onSaveAction.canExecute) {
             onSaveAction.execute();
@@ -101,13 +105,7 @@ export function Bpmnwidget(props) {
      * Show error if Mendix attribute is unavailable
      */
     if (bpmnXML && bpmnXML.status === "unavailable") {
-        return (
-            <div className={`bpmn-widget ${className || ""}`} style={style}>
-                <div className="bpmn-error">
-                    <p>Unable to load BPMN widget. Please check your configuration.</p>
-                </div>
-            </div>
-        );
+         return null;
     }
 
     /**

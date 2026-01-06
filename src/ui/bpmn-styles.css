@@ -78,7 +78,7 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    padding: 8px 16px;
+    padding: 6px 8px;
     font-size: 14px;
     font-weight: 500;
     line-height: 1.5;
@@ -131,7 +131,6 @@
 
 /* Icon Button (Zoom controls) */
 .bpmn-btn-icon {
-    padding: 6px 12px;
     background-color: #ffffff;
     color: #333;
     border-color: #d0d0d0;
@@ -140,7 +139,7 @@
 }
 
 .bpmn-btn-icon:hover:not(:disabled) {
-    background-color: #f5f5f5;
+    /* background-color: #f5f5f5; */
     border-color: #b0b0b0;
 }
 

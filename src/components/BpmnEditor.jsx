@@ -1,5 +1,10 @@
-import { useState, useRef, createElement } from "react";
+import { useState, useRef, createElement, useEffect } from "react";
 import BpmnModelerComponent from "./BpmnModeler";
+import imageIcon from "../assets/image.svg";
+import folderIcon from "../assets/folder-closed.svg";
+import plusIcon from "../assets/plus.svg";
+import minusIcon from "../assets/minus.svg";
+import resetIcon from "../assets/fullscreen.svg"
 
 /**
  * BpmnEditor Component
@@ -30,9 +35,17 @@ export const BpmnEditor = ({
     const [error, setError] = useState(null);
     const [isSaving, setIsSaving] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
+    const [isImporting, setIsImporting] = useState(false);
+    const fileInputRef = useRef(null);
+    const [currentXml, setCurrentXml] = useState(initialXml); 
 
     // Ref to store modeler methods (exportXML, exportSVG, etc.)
     const modelerMethodsRef = useRef(null);
+
+    // Update currentXml when initialXml prop changes
+    useEffect(() => {
+    setCurrentXml(initialXml);
+    }, [initialXml]);
 
     /**
      * Handle modeler initialization
@@ -67,10 +80,16 @@ export const BpmnEditor = ({
 
             // Export the current diagram as XML
             const xml = await modelerMethodsRef.current.exportXML();
+            // ALSO export SVG for preview
+            const svg = await modelerMethodsRef.current.exportSVG();
+            // Convert SVG to base64
+            const base64SVG = btoa(unescape(encodeURIComponent(svg)));
+            const dataURL = `data:image/svg+xml;base64,${base64SVG}`;
+
 
             // Call the parent's onSave callback with the XML
             if (onSave) {
-                onSave(xml);
+                onSave(xml, dataURL);
             }
         } catch (err) {
             console.error("Error saving BPMN diagram:", err);
@@ -151,6 +170,56 @@ export const BpmnEditor = ({
         }
     };
 
+    /**
+     * Handle Existing BPMN file open
+     */
+    const handleOpenFile = (event) => {
+        const file = event.target.files[0];
+        if(!file) {
+            return;
+        }
+        
+        //Validate file type
+        const validExtensions = [".bpmn",".xml", ".bpmn20.xml"];
+        const fileExtension = file.name.substring(file.name.lastIndexOf('.')).toLowerCase();
+        if (!validExtensions.includes(fileExtension)) {
+            setError('Invalid file type. please select a .bpmn or .xml file');
+            return;
+        }
+        
+        setIsImporting(true);
+        setError(null);
+        
+        const reader = new FileReader();
+        
+        reader.onload = (e) => {
+            try {
+                const xmlContent = e.target.result;
+                
+                // Simply update the XML state
+                // This will trigger the BpmnModeler to reload
+                setCurrentXml(xmlContent);
+                setIsImporting(false);
+                
+            } catch(err) {
+                console.error("Error reading BPMN file:", err);
+                setError("Failed to import file. Please ensure it's a valid BPMN diagram.");
+                setIsImporting(false);
+            }
+        };
+        
+        reader.onerror = () => {
+            setError("Failed to read file. Please try again.");
+            setIsImporting(false);
+        };
+        
+        // Read file as text
+        reader.readAsText(file);
+        
+        // Reset input so same file can be selected again
+        event.target.value = '';    
+    };
+
     return (
         <div className="bpmn-editor-container">
             {/* Toolbar */}
@@ -170,7 +239,7 @@ export const BpmnEditor = ({
                         title="Zoom In"
                         disabled={isLoading}
                     >
-                        <span>+</span>
+                    <img src={plusIcon} style={{width:18, height:18}}/>
                     </button>
                     <button
                         type="button"
@@ -179,7 +248,7 @@ export const BpmnEditor = ({
                         title="Zoom Out"
                         disabled={isLoading}
                     >
-                        <span>−</span>
+                    <img src={minusIcon} style={{width:18, height:18}} />
                     </button>
                     <button
                         type="button"
@@ -188,14 +257,37 @@ export const BpmnEditor = ({
                         title="Fit to Screen"
                         disabled={isLoading}
                     >
-                        <span>⊡</span>
+                    <img src={resetIcon} style={{width:18, height:18}} />
                     </button>
+
+                    {/* Hidden file input */}
+                    <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept=".bpmn,.xml,.bpmn20.xml"
+                        onChange={handleOpenFile}
+                        style={{ display: 'none' }}
+                    />
+                    
+                    {/* Open File button */}
+                    <button
+                        type="button"
+                        className="bpmn-btn bpmn-btn-secondary"
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={isLoading || isImporting}
+                        title="open BPMN diagram from local file system"
+                    >
+                    <img src={folderIcon} style={{width:18, height:18}} />
+                    </button>
+
                     <button
                         type="button"
                         className="bpmn-btn bpmn-btn-secondary"
                         onClick={handleDownloadSVG}
                         disabled={isLoading}
+                        title="Download as SVG"
                     >
+                    <img src={imageIcon} style={{width:18, height:18}}/>
                     </button>
                 </div>
 
@@ -253,7 +345,7 @@ export const BpmnEditor = ({
                 style={{ height: `${height}px` }}
             >
                 <BpmnModelerComponent
-                    initialXml={initialXml}
+                    initialXml={currentXml}
                     onError={handleError}
                     readOnly={readOnly}
                     onModelerReady={handleModelerReady}

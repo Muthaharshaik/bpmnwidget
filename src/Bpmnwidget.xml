@@ -17,6 +17,15 @@
                     <attributeType name="HashString"/>
                 </attributeTypes>
             </property>
+
+            <property key="previewImageAttr" type="attribute" required="false">
+                <caption>Preview Image</caption>
+                <description>Base64 encoded SVG preview of the diagram</description>
+                <attributeTypes>
+                    <attributeType name="String"/>
+                    <attributeType name="HashString"/>
+                </attributeTypes>
+            </property>
         </propertyGroup>
 
         <!-- Actions -->

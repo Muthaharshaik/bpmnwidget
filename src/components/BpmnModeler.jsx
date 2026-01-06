@@ -111,25 +111,29 @@ export const BpmnModelerComponent = ({
     }, []); // Empty dependency array = runs once on mount
 
     /**
-     * Update diagram when initialXml changes (if needed)
+     * Update diagram when initialXml changes
      * This effect handles updates to the diagram after initial load
-     */
+    */
     useEffect(() => {
-        if (!modelerRef.current || !initialXml) return;
+    if (!modelerRef.current || !initialXml) return;
 
-        modelerRef.current.importXML(initialXml)
-            .then(() => {
-                const canvas = modelerRef.current.get("canvas");
-                canvas.zoom("fit-viewport");
-            })
-            .catch((err) => {
-                console.error("Error updating BPMN diagram:", err);
-                if (onError) {
-                    onError(err);
-                }
-            });
+    modelerRef.current.importXML(initialXml)
+        .then(({ warnings }) => {
+            if (warnings.length) {
+                console.warn("BPMN Import Warnings:", warnings);
+            }
+            
+            // Just import - no zoom manipulation
+            // Let the diagram render at its saved position
+            
+        })
+        .catch((err) => {
+            console.error("Error updating BPMN diagram:", err);
+            if (onError) {
+                onError(err);
+            }
+        });
     }, [initialXml, onError]);
-
     /**
      * Method to export the current diagram as XML
      * This will be called by the parent component (BpmnEditor) when saving
