@@ -411,7 +411,7 @@
 }
 /* Breadcrumbs */
 .bjs-container {
-  --bjs-font-family: Arial, sans-serif;
+  --bjs-font-family: sans-serif;
 
   --color-grey-225-10-15: hsl(225, 10%, 15%);
   --color-grey-225-10-35: hsl(225, 10%, 35%);
@@ -457,7 +457,7 @@
   padding: 0px;
   margin: 0px;
   font-family: var(--breadcrumbs-font-family);
-  font-size: 16px;
+  font-size: 15px;
   line-height: normal;
 }
 
@@ -482,12 +482,12 @@
 .bjs-breadcrumbs li a {
   cursor: pointer;
   color: var(--breadcrumbs-item-color);
+  text-decoration: none !important;
 }
 
 .bjs-breadcrumbs li:last-of-type a {
   color: inherit;
   cursor: default;
-  text-decoration: none;
 }
 
 .bjs-breadcrumbs li:not(:first-child)::before {

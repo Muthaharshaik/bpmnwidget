@@ -1,6 +1,6 @@
 import { useEffect, useRef, useCallback, createElement } from "react";
 import BpmnModeler from "bpmn-js/lib/Modeler";
-
+import { CreateAppendAnythingModule } from 'bpmn-js-create-append-anything';
 /**
  * BpmnModeler Component
  * 
@@ -49,7 +49,10 @@ export const BpmnModelerComponent = ({
         if (!containerRef.current) return;
 
         const modeler = new BpmnModeler({
-            container: containerRef.current
+            container: containerRef.current,
+            additionalModules: [
+                CreateAppendAnythingModule
+            ]
         });
 
         modelerRef.current = modeler;
@@ -174,15 +177,15 @@ export const BpmnModelerComponent = ({
     }, []);
 
     return (
-        <div 
-            ref={containerRef} 
-            className="bpmn-modeler-container"
+            <div 
+                ref={containerRef} 
+                className="bpmn-modeler-container"
             style={{ 
                 width: "100%", 
                 height: "100%",
                 backgroundColor: "#ffffff"
             }}
-        />
+            />
     );
 };
 
