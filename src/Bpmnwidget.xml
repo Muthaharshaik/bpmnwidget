@@ -11,7 +11,7 @@
         <propertyGroup caption="Data">
             <property key="bpmnXML" type="attribute" required="false">
                 <caption>BPMN XML</caption>
-                <description>The BPMN diagram XML content (leave empty for new diagram)</description>
+                <description>The BPMN diagram XML content</description>
                 <attributeTypes>
                     <attributeType name="String"/>
                     <attributeType name="HashString"/>
@@ -41,25 +41,5 @@
             </property>
         </propertyGroup>
 
-        <!-- Behavior -->
-        <propertyGroup caption="Behavior">
-            <property key="readOnly" type="boolean" defaultValue="false">
-                <caption>Read Only</caption>
-                <description>When enabled, the diagram can only be viewed, not edited</description>
-            </property>
-
-            <property key="enablePropertiesPanel" type="boolean" defaultValue="false">
-                <caption>Enable Properties Panel</caption>
-                <description>Show properties panel on the right side (requires bpmn-js-properties-panel)</description>
-            </property>
-        </propertyGroup>
-
-        <!-- Appearance -->
-        <propertyGroup caption="Appearance">
-            <property key="height" type="integer" defaultValue="600">
-                <caption>Height</caption>
-                <description>Height of the BPMN editor in pixels</description>
-            </property>
-        </propertyGroup>
     </properties>
 </widget>

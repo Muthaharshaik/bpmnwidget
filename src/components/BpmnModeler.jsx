@@ -10,7 +10,6 @@ import BpmnModeler from "bpmn-js/lib/Modeler";
  * Props:
  * - initialXml: The initial BPMN XML to load (optional)
  * - onError: Callback function when an error occurs
- * - readOnly: If true, makes the diagram read-only
  * - onModelerReady: Callback when modeler is initialized
  */
 
@@ -36,8 +35,7 @@ const DEFAULT_BPMN_XML = `<?xml version="1.0" encoding="UTF-8"?>
 
 export const BpmnModelerComponent = ({ 
     initialXml, 
-    onError, 
-    readOnly = false,
+    onError,
     onModelerReady 
 }) => {
     const containerRef = useRef(null);
@@ -73,13 +71,6 @@ export const BpmnModelerComponent = ({
                 });
 
                 canvas.zoom("fit-viewport");
-
-                // Handle read-only mode
-                if (readOnly) {
-                    modeler.get("eventBus").on("element.click", 100000, () => {
-                        return false;
-                    });
-                }
 
                 // Notify parent that modeler is ready
                 if (onModelerReady) {

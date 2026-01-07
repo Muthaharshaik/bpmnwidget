@@ -21,16 +21,12 @@ import jsPDF from "jspdf";
  * - initialXml: Initial BPMN XML to load
  * - onSave: Callback function(xml) when user saves
  * - onCancel: Callback function when user cancels
- * - readOnly: If true, shows view-only mode
- * - height: Height of the editor in pixels
  */
 
 export const BpmnEditor = ({ 
     initialXml, 
     onSave, 
-    onCancel, 
-    readOnly = false,
-    height = 600
+    onCancel
 }) => {
     // State management
     const [error, setError] = useState(null);
@@ -385,7 +381,7 @@ export const BpmnEditor = ({
             <div className="bpmn-toolbar">
                 <div className="bpmn-toolbar-left">
                     <h3 className="bpmn-title">
-                        {readOnly ? "View BPMN Diagram" : "Edit BPMN Diagram"}
+                        "Edit BPMN Diagram"
                     </h3>
                 </div>
 
@@ -512,7 +508,7 @@ export const BpmnEditor = ({
                             Cancel
                         </button>
                     )}
-                    {!readOnly && onSave && (
+                    {onSave && (
                         <button
                             type="button"
                             className="bpmn-btn bpmn-btn-primary"
@@ -551,12 +547,10 @@ export const BpmnEditor = ({
             {/* BPMN Canvas */}
             <div 
                 className="bpmn-canvas-wrapper"
-                style={{ height: `${height}px` }}
             >
                 <BpmnModelerComponent
                     initialXml={currentXml}
                     onError={handleError}
-                    readOnly={readOnly}
                     onModelerReady={handleModelerReady}
                 />
             </div>

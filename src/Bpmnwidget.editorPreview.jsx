@@ -11,11 +11,11 @@ import { createElement } from "react";
  */
 
 export function preview(props) {
-    const { readOnly, height, class: className } = props;
+    const { class: className } = props;
 
     // Get readable property values for display
-    const mode = readOnly ? "View Mode" : "Edit Mode";
-    const editorHeight = height || 600;
+    const mode = "Edit Mode";
+    const editorHeight = 600;
 
     return (
         <div 
@@ -72,8 +72,8 @@ export function preview(props) {
                 <div style={{
                     display: "inline-block",
                     padding: "6px 16px",
-                    backgroundColor: readOnly ? "#e3f2fd" : "#fff3e0",
-                    color: readOnly ? "#1976d2" : "#f57c00",
+                    backgroundColor: "#fff3e0",
+                    color: "#f57c00",
                     borderRadius: "16px",
                     fontSize: "13px",
                     fontWeight: 500,
@@ -151,8 +151,5 @@ export function getPreviewCss() {
  * Get the display name shown in Studio Pro's widget list
  */
 export function getCustomCaption(props) {
-    if (props.readOnly) {
-        return "BPMN Widget (Read-Only)";
-    }
     return "BPMN Widget";
 }

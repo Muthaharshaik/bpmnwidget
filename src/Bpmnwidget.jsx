@@ -13,9 +13,6 @@ import "./ui/bpmn-styles.css";
  * - bpmnXML: EditableValue<string> - The BPMN XML attribute from entity
  * - onSaveAction: ActionValue - Mendix action to execute on save
  * - onCancelAction: ActionValue - Mendix action to execute on cancel
- * - readOnly: boolean - View-only mode
- * - enablePropertiesPanel: boolean - Show properties panel
- * - height: number - Height of editor in pixels
  * - class: string - CSS class from Mendix
  * - style: object - Style object from Mendix
  * - tabIndex: number - Tab index for accessibility
@@ -27,8 +24,6 @@ export function Bpmnwidget(props) {
         previewImageAttr,
         onSaveAction,
         onCancelAction,
-        readOnly,
-        height,
         class: className,
         style,
         tabIndex
@@ -122,8 +117,6 @@ export function Bpmnwidget(props) {
                 initialXml={currentXml}
                 onSave={handleSave}
                 onCancel={handleCancel}
-                readOnly={readOnly}
-                height={height}
             />
         </div>
     );
@@ -157,7 +150,6 @@ export function preview(props) {
                 </div>
                 <h3 style={{ margin: 0, color: "#666" }}>BPMN Widget</h3>
                 <p style={{ margin: "8px 0 0 0", color: "#999", fontSize: "14px" }}>
-                    {props.readOnly ? "View Mode" : "Edit Mode"}
                 </p>
             </div>
         </div>
