@@ -44,7 +44,7 @@
     align-items: center;
     justify-content: space-between;
     padding: 12px 16px;
-    background-color: #f5f5f5;
+    background-color: #e6eef8;
     border-bottom: 1px solid #d0d0d0;
     gap: 16px;
     flex-wrap: wrap;
@@ -67,7 +67,7 @@
     margin: 0;
     font-size: 16px;
     font-weight: 600;
-    color: #333;
+    color: #2d2d2d;
 }
 
 .download-wrapper {
@@ -170,7 +170,7 @@
 /* Secondary Button (Cancel, Download) */
 .bpmn-btn-secondary {
     background-color: #ffffff;
-    color: #333;
+    color: #2d2d2d;
     border-color: #d0d0d0;
 }
 
@@ -187,7 +187,7 @@
 /* Icon Button (Zoom controls) */
 .bpmn-btn-icon {
     background-color: #ffffff;
-    color: #333;
+    color: #2d2d2d;
     border-color: #d0d0d0;
     font-size: 18px;
     line-height: 1;
@@ -287,7 +287,7 @@
 }
 
 .djs-palette .entry {
-    color: #333;
+    color: #2d2d2d;
 }
 
 .djs-palette .entry:hover {
@@ -303,7 +303,7 @@
 }
 
 .djs-context-pad .entry {
-    color: #333;
+    color: #2d2d2d;
 }
 
 .djs-context-pad .entry:hover {
@@ -319,7 +319,7 @@
 }
 
 .djs-popup .entry {
-    color: #333;
+    color: #2d2d2d;
 }
 
 .djs-popup .entry:hover {
@@ -334,7 +334,7 @@
     padding: 4px;
     font-family: Arial, sans-serif;
     font-size: 12px;
-    color: #333;
+    color: #2d2d2d;
 }
 
 /* Minimap (if enabled) */

@@ -1,9 +1,9 @@
 import { useState, useRef, createElement, useEffect } from "react";
 import BpmnModelerComponent from "./BpmnModeler";
 import folderIcon from "../assets/folder-closed.svg";
-import plusIcon from "../assets/plus.svg";
-import minusIcon from "../assets/minus.svg";
-import resetIcon from "../assets/fullscreen.svg";
+import plusIcon from "../assets/zoom-in.svg";
+import minusIcon from "../assets/zoom-out.svg";
+import resetIcon from "../assets/move-diagonal.svg";
 import downloadIcon from "../assets/download.svg";
 import jsPDF from "jspdf";
 
@@ -392,7 +392,7 @@ export const BpmnEditor = ({
             <div className="bpmn-toolbar">
                 <div className="bpmn-toolbar-left">
                     <h3 className="bpmn-title">
-                        "Edit BPMN Diagram"
+                        BPMN Diagram
                     </h3>
                 </div>
 
