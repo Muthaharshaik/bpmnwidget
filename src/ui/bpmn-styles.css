@@ -19,6 +19,7 @@
 @import "bpmn-js/dist/assets/bpmn-font/css/bpmn.css";
 @import "bpmn-js/dist/assets/bpmn-font/css/bpmn-codes.css";
 @import "bpmn-js/dist/assets/bpmn-font/css/bpmn-embedded.css";
+@import "bpmn-js-color-picker/colors/color-picker.css";
 
 /* ===================================
    Editor Container
@@ -300,6 +301,7 @@
     border: 1px solid #d0d0d0;
     border-radius: 4px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    width: 80px !important;
 }
 
 .djs-context-pad .entry {

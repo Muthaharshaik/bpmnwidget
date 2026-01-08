@@ -1,6 +1,7 @@
 import { useEffect, useRef, useCallback, createElement } from "react";
 import BpmnModeler from "bpmn-js/lib/Modeler";
 import { CreateAppendAnythingModule } from 'bpmn-js-create-append-anything';
+import ColorPickerModule  from 'bpmn-js-color-picker';
 /**
  * BpmnModeler Component
  * 
@@ -51,7 +52,8 @@ export const BpmnModelerComponent = ({
         const modeler = new BpmnModeler({
             container: containerRef.current,
             additionalModules: [
-                CreateAppendAnythingModule
+                CreateAppendAnythingModule,
+                ColorPickerModule
             ]
         });
 
