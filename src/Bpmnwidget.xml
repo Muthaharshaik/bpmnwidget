@@ -26,6 +26,14 @@
                     <attributeType name="HashString"/>
                 </attributeTypes>
             </property>
+
+            <property key="bpmnName" type="attribute" required="false">
+                <caption>BPMN Name</caption>
+                <description>BPMN File Name</description>
+                <attributeTypes>
+                    <attributeType name="String"/>
+                </attributeTypes>
+            </property>
         </propertyGroup>
 
         <!-- Actions -->

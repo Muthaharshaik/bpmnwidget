@@ -22,6 +22,7 @@ export function Bpmnwidget(props) {
     const {
         bpmnXML,
         previewImageAttr,
+        bpmnName,
         onSaveAction,
         onCancelAction,
         class: className,
@@ -40,6 +41,8 @@ export function Bpmnwidget(props) {
         }
         return null; // Return null for new diagrams
     }, [bpmnXML]);
+
+    const currentBpmnName = bpmnName?.status === "available" ? bpmnName.value : null;
 
     /**
      * Handle Save
@@ -117,6 +120,8 @@ export function Bpmnwidget(props) {
                 initialXml={currentXml}
                 onSave={handleSave}
                 onCancel={handleCancel}
+                bpmnFile={currentBpmnName}
+
             />
         </div>
     );

@@ -26,7 +26,8 @@ import jsPDF from "jspdf";
 export const BpmnEditor = ({ 
     initialXml, 
     onSave, 
-    onCancel
+    onCancel,
+    bpmnFile
 }) => {
     // State management
     const [error, setError] = useState(null);
@@ -172,6 +173,16 @@ export const BpmnEditor = ({
     };
 
     /**
+     * Sanitize the file names
+     */
+    const sanitizeFilename = (name) => {
+        if (!name || !name.trim()) {
+            return null;
+        }
+        return name.trim();
+    }
+
+    /**
      * Handle Download as SVG
      */
     const handleDownloadSVG = async () => {
@@ -186,7 +197,7 @@ export const BpmnEditor = ({
             const url = URL.createObjectURL(blob);
             const link = document.createElement("a");
             link.href = url;
-            link.download = "diagram.svg";
+            link.download = `${sanitizeFilename(bpmnFile)}.svg`;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
@@ -212,7 +223,7 @@ export const BpmnEditor = ({
             const url = URL.createObjectURL(blob);
             const link = document.createElement("a");
             link.href = url;
-            link.download = "diagram.bpmn";
+            link.download = `${sanitizeFilename(bpmnFile)}.bpmn`;
             
             document.body.appendChild(link);
             link.click();
@@ -300,7 +311,7 @@ export const BpmnEditor = ({
                     pdf.addImage(imgData, 'PNG', x, y, finalWidth, finalHeight);
                     
                     // Save the PDF
-                    pdf.save('diagram.pdf');
+                    pdf.save(`${sanitizeFilename(bpmnFile)}.pdf`);
                     
                     // Cleanup
                     URL.revokeObjectURL(url);
