@@ -5,6 +5,7 @@ import plusIcon from "../assets/zoom-in.svg";
 import minusIcon from "../assets/zoom-out.svg";
 import resetIcon from "../assets/move-diagonal.svg";
 import downloadIcon from "../assets/download.svg";
+import keyboardIcon from "../assets/keyboard.svg";
 import jsPDF from "jspdf";
 
 /**
@@ -36,11 +37,13 @@ export const BpmnEditor = ({
     const [isImporting, setIsImporting] = useState(false);
     const [open, setOpen] = useState(false);
     const [currentXml, setCurrentXml] = useState(initialXml);
+    const [showKeyboardShortcuts, setShowKeyboardShortcuts] = useState(false);
     
     // Refs
     const fileInputRef = useRef(null);
     const modelerMethodsRef = useRef(null);
     const lastLoadedXmlRef = useRef(initialXml);
+    const editorActionsRef = useRef(null);
 
     /**
      * Only reload diagram if we're opening a genuinely different diagram
@@ -386,6 +389,14 @@ export const BpmnEditor = ({
         event.target.value = '';
     };
 
+    useEffect(() => {
+    editorActionsRef.current = {
+        downloadPDF: handleDownloadPDF,
+        downloadSVG: handleDownloadSVG,
+        downloadBPMN: handleDownloadBPMN,
+    };
+    }, []);
+
     return (
         <div className="bpmn-editor-container">
             {/* Toolbar */}
@@ -427,7 +438,7 @@ export const BpmnEditor = ({
                     >
                         <img src={resetIcon} style={{width:18, height:18}} alt="Fit to Screen" />
                     </button>
-
+                    
                     {/* Hidden file input */}
                     <input
                         ref={fileInputRef}
@@ -505,6 +516,16 @@ export const BpmnEditor = ({
                             </div>
                         )}
                     </div>
+                    {/* KeyBoard shortcuts */}
+                    <button
+                        type="button"
+                        className="bpmn-btn bpmn-btn-secondary"
+                        onClick={() => setShowKeyboardShortcuts(true)}
+                        title="Keyboard Shortcuts"
+                        disabled={isLoading}
+                    >
+                        <img src={keyboardIcon} style={{width: 18, height:18}} alt="Key Board" />
+                    </button>
                 </div>
 
                 <div className="bpmn-toolbar-right">
@@ -563,8 +584,132 @@ export const BpmnEditor = ({
                     initialXml={currentXml}
                     onError={handleError}
                     onModelerReady={handleModelerReady}
+                    editorActionsRef={editorActionsRef}
                 />
             </div>
+            {/* Keyboard Shortcuts Modal */}
+            {showKeyboardShortcuts && (
+                <div 
+                    className="keyboard-shortcuts-overlay"
+                    onClick={() => setShowKeyboardShortcuts(false)}
+                >
+                    <div 
+                        className="keyboard-shortcuts-modal"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="keyboard-shortcuts-header">
+                            <h3>Keyboard Shortcuts</h3>
+                            <button
+                                className="keyboard-shortcuts-close"
+                                onClick={() => setShowKeyboardShortcuts(false)}
+                            >
+                                ×
+                            </button>
+                        </div>
+                        
+                        <div className="keyboard-shortcuts-content">
+                            <div className="shortcuts-section">
+                                <div className="shortcut-item">
+                                    <span className="shortcut-description">Open diagram from local file system</span>
+                                    <span className="shortcut-keys">
+                                        <kbd>Ctrl</kbd> + <kbd>O</kbd>
+                                    </span>
+                                </div>
+                                <div className="shortcut-item">
+                                    <span className="shortcut-description">Download BPMN</span>
+                                    <span className="shortcut-keys">
+                                        <kbd>Ctrl</kbd> + <kbd>S</kbd>
+                                    </span>
+                                </div>
+                                <div className="shortcut-item">
+                                    <span className="shortcut-description">Download PDF</span>
+                                    <span className="shortcut-keys">
+                                        <kbd>Ctrl</kbd> + <kbd>D</kbd>
+                                    </span>
+                                </div>
+                                <div className="shortcut-item">
+                                    <span className="shortcut-description">Download SVG</span>
+                                    <span className="shortcut-keys">
+                                        <kbd>Ctrl</kbd> + <kbd>V</kbd>
+                                    </span>
+                                </div>
+                                <div className="shortcut-item">
+                                   <span className="shortcut-description">Undo</span>
+                                    <span className="shortcut-keys">
+                                        <kbd>Ctrl</kbd> + <kbd>Z</kbd>
+                                    </span>
+                                </div>
+                                <div className="shortcut-item">
+                                    <span className="shortcut-description">Redo</span>
+                                    <span className="shortcut-keys">
+                                        <kbd>Ctrl</kbd> + <kbd>⇧</kbd> + <kbd>Z</kbd>
+                                    </span>
+                                </div>
+                                <div className="shortcut-item">
+                                    <span className="shortcut-description">Select All</span>
+                                    <span className="shortcut-keys">
+                                        <kbd>Ctrl</kbd> + <kbd>A</kbd>
+                                    </span>  
+                                </div>
+                                <div className="shortcut-item">
+                                    <span className="shortcut-description">Scrolling (Vertical)</span>
+                                    <span className="shortcut-keys">
+                                        <kbd>Ctrl</kbd> + <kbd>Scrolling</kbd>
+                                    </span>  
+                                </div>
+                                <div className="shortcut-item">
+                                    <span className="shortcut-description">Scrolling (Horizontal)</span>
+                                    <span className="shortcut-keys">
+                                        <kbd>Ctrl</kbd> + <kbd>⇧</kbd> + <kbd>Scrolling</kbd>
+                                    </span>  
+                                </div>
+                                <div className="shortcut-item">
+                                    <span className="shortcut-description">Direct Editing</span>
+                                    <span className="shortcut-keys">
+                                        <kbd>E</kbd>
+                                    </span>
+                                </div>
+                                <div className="shortcut-item">
+                                    <span className="shortcut-description">Hand Tool (Pan)</span>
+                                    <span className="shortcut-keys">
+                                        <kbd>H</kbd>
+                                    </span>
+                                </div>
+                                <div className="shortcut-item">
+                                    <span className="shortcut-description">Lasso Tool</span>
+                                    <span className="shortcut-keys">
+                                        <kbd>L</kbd>
+                                    </span>
+                                </div>
+                                <div className="shortcut-item">
+                                    <span className="shortcut-description">Space Tool</span>
+                                    <span className="shortcut-keys">
+                                        <kbd>S</kbd>
+                                    </span>
+                                </div>
+                                <div className="shortcut-item">
+                                    <span className="shortcut-description">Replace Tool</span>
+                                    <span className="shortcut-keys">
+                                        <kbd>R</kbd>
+                                    </span>
+                                </div>
+                                <div className="shortcut-item">
+                                    <span className="shortcut-description">Append anything</span>
+                                    <span className="shortcut-keys">
+                                        <kbd>A</kbd>
+                                    </span>
+                                </div>
+                                <div className="shortcut-item">
+                                    <span className="shortcut-description">Create anything</span>
+                                    <span className="shortcut-keys">
+                                        <kbd>N</kbd>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

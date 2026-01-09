@@ -37,7 +37,8 @@ const DEFAULT_BPMN_XML = `<?xml version="1.0" encoding="UTF-8"?>
 export const BpmnModelerComponent = ({ 
     initialXml, 
     onError,
-    onModelerReady 
+    onModelerReady,
+    editorActionsRef
 }) => {
     const containerRef = useRef(null);
     const modelerRef = useRef(null);
@@ -102,6 +103,69 @@ export const BpmnModelerComponent = ({
     }, []); // Empty deps = runs once
 
     /**
+     * Setup keyboard shortcuts AFTER modeler is initialized
+     */
+    useEffect(() => {
+        if (!modelerRef.current) return;
+
+        try {
+            const keyboard = modelerRef.current.get('keyboard');
+            
+            console.info('Keyboard module active');
+            
+            // Add custom keyboard shortcuts if needed
+            keyboard.addListener(({ keyEvent, target }) => {
+
+            //Ignore typing in inputs / text areas
+            if (
+                target &&
+                (target.tagName === "INPUT" ||
+                target.tagName === "TEXTAREA" ||
+                target.isContentEditable)
+            ) {
+                return false;
+            }
+
+            const isCmdOrCtrl = keyEvent.ctrlKey || keyEvent.metaKey;
+            if (!isCmdOrCtrl) return false;
+
+            const key = keyEvent.key.toLowerCase();
+
+            // IMPORTANT: get actions from editor
+            const actions = editorActionsRef?.current;
+            if (!actions) return false;
+
+            // Download BPMN
+            if (isCmdOrCtrl && key === "s") {
+                keyEvent.preventDefault();
+                actions.downloadBPMN?.();
+                return true;
+            }
+
+            // Download PDF
+            if (isCmdOrCtrl && key === "d") {
+                keyEvent.preventDefault();
+                actions.downloadPDF?.();
+                return true;
+            }
+
+            // Download SVG
+            if (isCmdOrCtrl && key === "i") {
+                keyEvent.preventDefault();
+                actions.downloadSVG?.();
+                return true;
+            }
+
+            return false; // let BPMN handle everything else
+        });
+
+            
+        } catch (error) {
+            console.error(' Keyboard module error:', error);
+        }
+    }, []);
+
+    /**
      * Handle XML updates (for file opens and diagram switches)
      * CRITICAL: Only re-import if XML actually changed
      */
@@ -110,14 +174,15 @@ export const BpmnModelerComponent = ({
         if (!initialXml) return;
         
         // Skip if XML hasn't changed (prevents unwanted re-imports)
-        if (initialXml === lastImportedXmlRef.current) {
+        if (initialXml === lastImportedXmlRef.current || initialXml === undefined) {
             return;
         }
 
         console.log("Importing new diagram XML");
+        const xmlToLoad = initialXml || DEFAULT_BPMN_XML;
         lastImportedXmlRef.current = initialXml;
 
-        modelerRef.current.importXML(initialXml)
+        modelerRef.current.importXML(xmlToLoad)
             .then(({ warnings }) => {
                 if (warnings.length) {
                     console.warn("BPMN Import Warnings:", warnings);
@@ -182,11 +247,12 @@ export const BpmnModelerComponent = ({
             <div 
                 ref={containerRef} 
                 className="bpmn-modeler-container"
-            style={{ 
-                width: "100%", 
-                height: "100%",
-                backgroundColor: "#ffffff"
-            }}
+                tabIndex={0}
+                style={{ 
+                    width: "100%", 
+                    height: "100%",
+                    backgroundColor: "#ffffff"
+                }}
             />
     );
 };
