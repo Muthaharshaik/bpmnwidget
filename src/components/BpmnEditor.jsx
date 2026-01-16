@@ -1,4 +1,4 @@
-import { useState, useRef, createElement, useEffect } from "react";
+import { createElement, useState, useRef, useEffect } from "react";
 import BpmnModelerComponent from "./BpmnModeler";
 import folderIcon from "../assets/folder-closed.svg";
 import plusIcon from "../assets/zoom-in.svg";
@@ -38,6 +38,9 @@ export const BpmnEditor = ({
     const [open, setOpen] = useState(false);
     const [currentXml, setCurrentXml] = useState(initialXml);
     const [showKeyboardShortcuts, setShowKeyboardShortcuts] = useState(false);
+    const [validationResults, setValidationResults] = useState({  errors: [], warnings: []});
+
+
     
     // Refs
     const fileInputRef = useRef(null);
@@ -83,9 +86,23 @@ export const BpmnEditor = ({
     /**
      * Handle modeler initialization
      */
-    const handleModelerReady = (methods) => {
+    const handleModelerReady = async (methods) => {
         modelerMethodsRef.current = methods;
         setIsLoading(false);
+            // 🔁 AUTO-RUN VALIDATION ON LOAD
+        try {
+        const { errors, warnings } = await methods.validateDiagram();
+
+        setValidationResults({ errors, warnings });
+        methods.applyValidationMarkers(errors, warnings);
+
+        // Optional: show blocking message immediately
+        if (errors.length > 0) {
+            setError("Please fix validation errors.");
+        }
+        } catch (e) {
+        console.error("Auto validation failed", e);
+        }
     };
 
     /**
@@ -101,35 +118,42 @@ export const BpmnEditor = ({
      * Exports XML from modeler and calls parent's onSave callback
      */
     const handleSave = async () => {
-        if (!modelerMethodsRef.current?.exportXML) {
-            setError("Modeler not ready");
-            return;
+    if (!modelerMethodsRef.current) {
+        setError("Modeler not ready");
+        return;
+    }
+
+    try {
+        setIsSaving(true);
+        setError(null);
+
+        // 🔴 VALIDATION FIRST
+        const { errors, warnings  } = await modelerMethodsRef.current.validateDiagram();
+
+        setValidationResults({ errors, warnings });
+        modelerMethodsRef.current.applyValidationMarkers(errors, warnings);
+        if (errors.length > 0) {
+        setError("Please fix validation errors before saving.");
+        return;
         }
 
-        try {
-            setIsSaving(true);
-            setError(null);
+        // ✅ SAFE TO SAVE
+        const xml = await modelerMethodsRef.current.exportXML();
+        const svg = await modelerMethodsRef.current.exportSVG();
 
-            // Export the current diagram as XML
-            const xml = await modelerMethodsRef.current.exportXML();
-            // ALSO export SVG for preview
-            const svg = await modelerMethodsRef.current.exportSVG();
-            // Convert SVG to base64
-            const base64SVG = btoa(unescape(encodeURIComponent(svg)));
-            const dataURL = `data:image/svg+xml;base64,${base64SVG}`;
+        const base64SVG = btoa(unescape(encodeURIComponent(svg)));
+        const dataURL = `data:image/svg+xml;base64,${base64SVG}`;
 
+        onSave?.(xml, dataURL);
 
-            // Call the parent's onSave callback with the XML
-            if (onSave) {
-                onSave(xml, dataURL);
-            }
-        } catch (err) {
-            console.error("Error saving BPMN diagram:", err);
-            setError("Failed to save diagram. Please try again.");
-        } finally {
-            setIsSaving(false);
-        }
+    } catch (err) {
+        console.error(err);
+        setError("Failed to save diagram");
+    } finally {
+        setIsSaving(false);
+    }
     };
+
 
     /**
      * Handle Cancel button click
@@ -397,6 +421,14 @@ export const BpmnEditor = ({
     };
     }, []);
 
+    // 🔹 Group warnings by ruleId (UX improvement)
+    const groupedWarnings = validationResults.warnings.reduce((acc, w) => {
+        acc[w.ruleId] = acc[w.ruleId] || [];
+        acc[w.ruleId].push(w);
+        return acc;
+    }, {});
+
+
     return (
         <div className="bpmn-editor-container">
             {/* Toolbar */}
@@ -568,6 +600,7 @@ export const BpmnEditor = ({
                 </div>
             )}
 
+
             {/* Loading state */}
             {isLoading && (
                 <div className="bpmn-loading">
@@ -576,17 +609,77 @@ export const BpmnEditor = ({
                 </div>
             )}
 
+            {/* BPMN Workspace */}
+            <div className="bpmn-workspace">
+
             {/* BPMN Canvas */}
-            <div 
-                className="bpmn-canvas-wrapper"
-            >
+            <div className="bpmn-canvas-wrapper">
                 <BpmnModelerComponent
-                    initialXml={currentXml}
-                    onError={handleError}
-                    onModelerReady={handleModelerReady}
-                    editorActionsRef={editorActionsRef}
+                initialXml={currentXml}
+                onError={handleError}
+                onModelerReady={handleModelerReady}
+                editorActionsRef={editorActionsRef}
+                onValidate={(errors, warnings) => {
+                    setValidationResults({ errors, warnings });
+                    modelerMethodsRef.current?.applyValidationMarkers(errors, warnings);
+                }}
                 />
             </div>
+
+            {/* Validation Panel (RIGHT SIDE) */}
+            <div className="bpmn-validation-panel">
+                <h4>Validation</h4>
+            {/* ERRORS */}
+            {validationResults.errors.length > 0 && (
+            <div>
+                <h5 className="error-title">Errors</h5>
+                {validationResults.errors.map((e, i) => (
+                <div
+                    key={`error-${i}`}
+                    className="validation-item error"
+                    onClick={() =>
+                    modelerMethodsRef.current?.focusElement(e.elementId)
+                    }
+                >
+                    {e.message}
+                </div>
+                ))}
+            </div>
+            )}
+
+            {/* WARNINGS */}
+            {Object.keys(groupedWarnings).length > 0 && (
+            <div>
+                <h5 className="warning-title">Warnings</h5>
+
+                {Object.entries(groupedWarnings).map(([ruleId, items]) => (
+                <div key={ruleId} className="validation-group">
+                    <div className="validation-group-title">
+                    ⚠ {items.length} issue(s): {items[0].message}
+                    </div>
+
+                    <div className="validation-group-items">
+                    {items.map((w, i) => (
+                        <div
+                        key={`${ruleId}-${i}`}
+                        className="validation-item warning"
+                        onClick={() =>
+                            modelerMethodsRef.current?.focusElement(w.elementId)
+                        }
+                        >
+                        {w.elementId || "Global"}
+                        </div>
+                    ))}
+                    </div>
+                </div>
+                ))}
+            </div>
+            )}
+
+            </div>
+
+            </div>
+
             {/* Keyboard Shortcuts Modal */}
             {showKeyboardShortcuts && (
                 <div 

@@ -2,6 +2,8 @@ import { useEffect, useRef, useCallback, createElement } from "react";
 import BpmnModeler from "bpmn-js/lib/Modeler";
 import { CreateAppendAnythingModule } from 'bpmn-js-create-append-anything';
 import ColorPickerModule  from 'bpmn-js-color-picker';
+import { validateDiagram as runValidation } from "../validations";
+
 /**
  * BpmnModeler Component
  * 
@@ -38,7 +40,8 @@ export const BpmnModelerComponent = ({
     initialXml, 
     onError,
     onModelerReady,
-    editorActionsRef
+    editorActionsRef,
+    onValidate
 }) => {
     const containerRef = useRef(null);
     const modelerRef = useRef(null);
@@ -83,6 +86,9 @@ export const BpmnModelerComponent = ({
                     onModelerReady({
                         exportXML,
                         exportSVG,
+                        validateDiagram,
+                        focusElement,
+                        applyValidationMarkers,
                         getModeler: () => modelerRef.current
                     });
                 }
@@ -101,6 +107,26 @@ export const BpmnModelerComponent = ({
             }
         };
     }, []); // Empty deps = runs once
+
+    useEffect(() => {
+        if (!modelerRef.current) return;
+
+        const modeler = modelerRef.current;
+        const eventBus = modeler.get("eventBus");
+
+        const runAutoValidation = async () => {
+            const { errors, warnings } = await runValidation(modeler);
+            onValidate?.(errors, warnings);
+        };
+
+        // Trigger on any modeling change
+        eventBus.on("commandStack.changed", runAutoValidation);
+
+        return () => {
+            eventBus.off("commandStack.changed", runAutoValidation);
+        };
+    }, []);
+
 
     /**
      * Setup keyboard shortcuts AFTER modeler is initialized
@@ -183,22 +209,42 @@ export const BpmnModelerComponent = ({
         lastImportedXmlRef.current = initialXml;
 
         modelerRef.current.importXML(xmlToLoad)
-            .then(({ warnings }) => {
-                if (warnings.length) {
-                    console.warn("BPMN Import Warnings:", warnings);
-                }
-                
-            // Just import - no zoom manipulation
-            // Let the diagram render at its saved position
-            
-            })
-            .catch((err) => {
-                console.error("Error updating BPMN diagram:", err);
-                if (onError) {
-                    onError(err);
+        .then(async () => {
+            const modeler = modelerRef.current;
+            const canvas = modeler.get("canvas");
+            const elementRegistry = modeler.get("elementRegistry");
+
+            // 1️⃣ CLEAR markers from previous diagram
+            elementRegistry.getAll().forEach(e => {
+                canvas.removeMarker(e.id, "bpmn-error");
+                canvas.removeMarker(e.id, "bpmn-warning");
+            });
+
+            // 2️⃣ RUN validation for the NEW diagram
+            const { errors, warnings } = await runValidation(modeler);
+
+            // 3️⃣ APPLY new markers
+            errors.forEach(e => {
+                if (e.elementId) {
+                    canvas.addMarker(e.elementId, "bpmn-error");
                 }
             });
+
+            warnings.forEach(w => {
+                if (w.elementId) {
+                    canvas.addMarker(w.elementId, "bpmn-warning");
+                }
+            });
+
+            // 4️⃣ UPDATE editor validation panel
+            onValidate?.(errors, warnings);
+        })
+        .catch((err) => {
+            console.error("Error updating BPMN diagram:", err);
+            onError?.(err);
+        });
     }, [initialXml, onError]);
+
     /**
      * Method to export the current diagram as XML
      * This will be called by the parent component (BpmnEditor) when saving
@@ -219,6 +265,63 @@ export const BpmnModelerComponent = ({
                     reject(err);
                 });
         });
+    }, []);
+
+    const validateDiagram = useCallback(() => {
+        if (!modelerRef.current) {
+            throw new Error("Modeler not initialized");
+        }
+        return runValidation(modelerRef.current);
+        }, []);
+
+    const applyValidationMarkers = useCallback((errors = [], warnings = []) => {
+        if (!modelerRef.current) return;
+
+        const canvas = modelerRef.current.get("canvas");
+        const elementRegistry = modelerRef.current.get("elementRegistry");
+
+        // 1️⃣ Clear existing markers
+        elementRegistry.getAll().forEach(e => {
+            canvas.removeMarker(e.id, "bpmn-error");
+            canvas.removeMarker(e.id, "bpmn-warning");
+        });
+
+        // 2️⃣ Add error markers
+        errors.forEach(e => {
+            if (e.elementId) {
+                canvas.addMarker(e.elementId, "bpmn-error");
+            }
+        });
+
+        // 3️⃣ Add warning markers
+        warnings.forEach(w => {
+            if (w.elementId) {
+                canvas.addMarker(w.elementId, "bpmn-warning");
+            }
+        });
+    }, []);
+
+    const focusElement = useCallback((elementId) => {
+        if (!modelerRef.current || !elementId) return;
+
+        const canvas = modelerRef.current.get("canvas");
+        const elementRegistry = modelerRef.current.get("elementRegistry");
+
+        const element = elementRegistry.get(elementId);
+        if (!element || !element.x || !element.y) return;
+
+        // ✅ Center element in viewport
+        canvas.scrollTo({
+            x: element.x + element.width / 2,
+            y: element.y + element.height / 2
+        });
+
+        // Highlight briefly
+        canvas.addMarker(elementId, "bpmn-focus");
+
+        setTimeout(() => {
+            canvas.removeMarker(elementId, "bpmn-focus");
+        }, 1200);
     }, []);
 
     /**

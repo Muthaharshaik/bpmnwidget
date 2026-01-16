@@ -141,3 +141,33 @@
         display: none;
     }
 }
+
+.bpmn-warning-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 14px;
+  background: #fff7e6;
+  border: 1px solid #f9ab00;
+  color: #7a4f01;
+  border-radius: 4px;
+  margin: 8px 12px;
+}
+
+.bpmn-warning-icon {
+  font-size: 18px;
+  margin-top: 2px;
+}
+
+.bpmn-warning-content ul {
+  margin: 4px 0 0;
+  padding-left: 18px;
+}
+
+.bpmn-warning-close {
+  margin-left: auto;
+  background: none;
+  border: none;
+  font-size: 16px;
+  cursor: pointer;
+}
