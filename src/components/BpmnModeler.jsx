@@ -3,6 +3,11 @@ import BpmnModeler from "bpmn-js/lib/Modeler";
 import { CreateAppendAnythingModule } from 'bpmn-js-create-append-anything';
 import ColorPickerModule  from 'bpmn-js-color-picker';
 import { validateDiagram as runValidation } from "../validations";
+import TokenSimulationModeler from "bpmn-js-token-simulation/lib/modeler";
+import { useTokenSimulation } from "../hooks/useTokenSimulation";
+
+
+
 
 /**
  * BpmnModeler Component
@@ -24,7 +29,7 @@ const DEFAULT_BPMN_XML = `<?xml version="1.0" encoding="UTF-8"?>
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
                   id="Definitions_1" 
                   targetNamespace="http://bpmn.io/schema/bpmn">
-  <bpmn:process id="Main_Process" isExecutable="false">
+  <bpmn:process id="Main_Process" isExecutable="true">
     <bpmn:startEvent id="StartEvent_1"/>
   </bpmn:process>
   <bpmndi:BPMNDiagram id="BPMNDiagram_1">
@@ -48,6 +53,52 @@ export const BpmnModelerComponent = ({
     const lastImportedXmlRef = useRef(null);
 
     /**
+     * Token simulation hook
+     */
+    useTokenSimulation(modelerRef);
+
+    const fitAndCenter = useCallback((modeler) => {
+    if (!modeler) return;
+
+    const canvas = modeler.get("canvas");
+    const elementRegistry = modeler.get("elementRegistry");
+
+    // 1️⃣ Fit diagram to viewport
+    canvas.zoom("fit-viewport");
+
+    // 2️⃣ Enforce minimum zoom (CRITICAL FIX)
+    const MIN_ZOOM = 0.5;
+    let zoom = canvas.zoom();
+
+    if (zoom < MIN_ZOOM) {
+        canvas.zoom(MIN_ZOOM);
+        zoom = MIN_ZOOM;
+    }
+
+    // 3️⃣ Collect diagram elements
+    const elements = elementRegistry.getAll().filter(e => e.x != null);
+    if (!elements.length) return;
+
+    const minX = Math.min(...elements.map(e => e.x));
+    const minY = Math.min(...elements.map(e => e.y));
+    const maxX = Math.max(...elements.map(e => e.x + e.width));
+    const maxY = Math.max(...elements.map(e => e.y + e.height));
+
+    // 4️⃣ Re-read viewbox AFTER zoom correction
+    const viewbox = canvas.viewbox();
+
+    // 5️⃣ Center diagram
+    canvas.viewbox({
+        x: minX + (maxX - minX) / 2 - viewbox.width / 2,
+        y: minY + (maxY - minY) / 2 - viewbox.height / 2,
+        width: viewbox.width,
+        height: viewbox.height
+    });
+    }, []);
+
+
+
+    /**
      * Initialize the BPMN Modeler (runs once on mount)
      */
     useEffect(() => {
@@ -57,7 +108,8 @@ export const BpmnModelerComponent = ({
             container: containerRef.current,
             additionalModules: [
                 CreateAppendAnythingModule,
-                ColorPickerModule
+                ColorPickerModule,
+                TokenSimulationModeler
             ]
         });
 
@@ -79,7 +131,7 @@ export const BpmnModelerComponent = ({
                 eventBus.on('root.set', function() {
                 });
 
-                canvas.zoom("fit-viewport");
+                fitAndCenter(modeler)
 
                 // Notify parent that modeler is ready
                 if (onModelerReady) {
@@ -89,7 +141,8 @@ export const BpmnModelerComponent = ({
                         validateDiagram,
                         focusElement,
                         applyValidationMarkers,
-                        getModeler: () => modelerRef.current
+                        fitAndCenter: () => fitAndCenter(modelerRef.current),
+                        getModeler: () => modelerRef.current,
                     });
                 }
             })
@@ -211,6 +264,13 @@ export const BpmnModelerComponent = ({
         modelerRef.current.importXML(xmlToLoad)
         .then(async () => {
             const modeler = modelerRef.current;
+            // RESET TOKEN SIMULATION ON NEW DIAGRAM
+            try {
+                modeler.get("tokenSimulation")?.reset();
+            } catch {
+                // tokenSimulation may not be available yet – safe to ignore
+            }
+            fitAndCenter(modeler);
             const canvas = modeler.get("canvas");
             const elementRegistry = modeler.get("elementRegistry");
 
@@ -244,6 +304,7 @@ export const BpmnModelerComponent = ({
             onError?.(err);
         });
     }, [initialXml, onError]);
+
 
     /**
      * Method to export the current diagram as XML
@@ -301,28 +362,31 @@ export const BpmnModelerComponent = ({
         });
     }, []);
 
-    const focusElement = useCallback((elementId) => {
+   const focusElement = useCallback((elementId) => {
         if (!modelerRef.current || !elementId) return;
 
         const canvas = modelerRef.current.get("canvas");
         const elementRegistry = modelerRef.current.get("elementRegistry");
 
         const element = elementRegistry.get(elementId);
-        if (!element || !element.x || !element.y) return;
+        if (!element) return;
 
-        // ✅ Center element in viewport
-        canvas.scrollTo({
-            x: element.x + element.width / 2,
-            y: element.y + element.height / 2
+        const viewbox = canvas.viewbox();
+
+        canvas.viewbox({
+            x: element.x + element.width / 2 - viewbox.width / 2,
+            y: element.y + element.height / 2 - viewbox.height / 2,
+            width: viewbox.width,
+            height: viewbox.height
         });
 
-        // Highlight briefly
         canvas.addMarker(elementId, "bpmn-focus");
-
         setTimeout(() => {
             canvas.removeMarker(elementId, "bpmn-focus");
         }, 1200);
     }, []);
+
+
 
     /**
      * Export current diagram as SVG with full diagram bounds

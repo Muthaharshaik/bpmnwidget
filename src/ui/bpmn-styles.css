@@ -20,6 +20,8 @@
 @import "bpmn-js/dist/assets/bpmn-font/css/bpmn-codes.css";
 @import "bpmn-js/dist/assets/bpmn-font/css/bpmn-embedded.css";
 @import "bpmn-js-color-picker/colors/color-picker.css";
+@import "bpmn-js-token-simulation/assets/css/bpmn-js-token-simulation.css";
+
 
 /* ===================================
    Editor Container
@@ -791,6 +793,63 @@
     font-size: 14px;
     color: #2d2d2d;
 }
+
+/* Token active element */
+.bpmn-token-active .djs-outline {
+    stroke: #00c853 !important;
+    stroke-width: 4px !important;
+    stroke-dasharray: 6 3;
+}
+
+/* Token active flow */
+.bpmn-token-flow .djs-visual path {
+    stroke: #2962ff !important;
+    stroke-width: 4px !important;
+}
+
+/* Token active element */
+.bpmn-token-active .djs-outline {
+  stroke: #00c853 !important;
+  stroke-width: 4px !important;
+  stroke-dasharray: 6 3;
+}
+
+/* Token active flow */
+.bpmn-token-flow .djs-visual path {
+  stroke: #2962ff !important;
+  stroke-width: 4px !important;
+}
+/* Ensure token simulation UI stays above canvas */
+.bjs-token-simulation {
+  position: fixed !important;
+  top: 90px;
+  left: 20px;
+  z-index: 1001;
+}
+
+/* Prevent orphaned simulation UI */
+.bjs-container:empty .bjs-token-simulation {
+  display: none;
+}
+
+/* Ensure token simulation overlay is always visible */
+.bpmn-modeler-container,
+.bpmn-modeler-container .djs-container {
+  overflow: visible !important;
+}
+
+/* Keep simulation toolbar above diagram */
+.bjs-token-simulation {
+  z-index: 20;
+}
+
+/* Prevent flex parent from collapsing */
+.bpmn-canvas-wrapper {
+  min-height: 0;
+  position: relative;
+}
+
+
 
 /* Responsive */
 @media (max-width: 768px) {

@@ -144,6 +144,7 @@ export const BpmnEditor = ({
         const base64SVG = btoa(unescape(encodeURIComponent(svg)));
         const dataURL = `data:image/svg+xml;base64,${base64SVG}`;
 
+
         onSave?.(xml, dataURL);
 
     } catch (err) {
@@ -164,39 +165,33 @@ export const BpmnEditor = ({
         }
     };
 
-    /**
-     * Handle Zoom In
-     */
-    const handleZoomIn = () => {
-        if (modelerMethodsRef.current?.getModeler) {
-            const modeler = modelerMethodsRef.current.getModeler();
-            const canvas = modeler.get("canvas");
-            const currentZoom = canvas.zoom();
-            canvas.zoom(currentZoom + 0.1);
-        }
+   const MIN_ZOOM = 0.5;
+   const MAX_ZOOM = 2.5;
+
+   const handleZoomIn = () => {
+        if (!modelerMethodsRef.current?.getModeler) return;
+
+        const modeler = modelerMethodsRef.current.getModeler();
+        const canvas = modeler.get("canvas");
+
+        canvas.zoom(Math.min(canvas.zoom() + 0.1, MAX_ZOOM));
     };
 
-    /**
-     * Handle Zoom Out
-     */
     const handleZoomOut = () => {
-        if (modelerMethodsRef.current?.getModeler) {
-            const modeler = modelerMethodsRef.current.getModeler();
-            const canvas = modeler.get("canvas");
-            const currentZoom = canvas.zoom();
-            canvas.zoom(currentZoom - 0.1);
-        }
+    if (!modelerMethodsRef.current?.getModeler) return;
+
+    const modeler = modelerMethodsRef.current.getModeler();
+    const canvas = modeler.get("canvas");
+
+    canvas.zoom(Math.max(canvas.zoom() - 0.1, MIN_ZOOM));
     };
+
 
     /**
      * Handle Zoom to Fit
      */
     const handleZoomFit = () => {
-        if (modelerMethodsRef.current?.getModeler) {
-            const modeler = modelerMethodsRef.current.getModeler();
-            const canvas = modeler.get("canvas");
-            canvas.zoom("fit-viewport");
-        }
+        modelerMethodsRef.current?.fitAndCenter?.();
     };
 
     /**
