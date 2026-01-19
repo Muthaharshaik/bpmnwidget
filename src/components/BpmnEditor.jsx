@@ -28,7 +28,9 @@ export const BpmnEditor = ({
     initialXml, 
     onSave, 
     onCancel,
-    bpmnFile
+    bpmnFile,
+    onTasksExtracted,
+    taskDataJson
 }) => {
     // State management
     const [error, setError] = useState(null);
@@ -47,6 +49,7 @@ export const BpmnEditor = ({
     const modelerMethodsRef = useRef(null);
     const lastLoadedXmlRef = useRef(initialXml);
     const editorActionsRef = useRef(null);
+    const lastAppliedTaskJsonRef = useRef(null);
 
     /**
      * Only reload diagram if we're opening a genuinely different diagram
@@ -89,12 +92,19 @@ export const BpmnEditor = ({
     const handleModelerReady = async (methods) => {
         modelerMethodsRef.current = methods;
         setIsLoading(false);
-            // 🔁 AUTO-RUN VALIDATION ON LOAD
+        // 🔁 AUTO-RUN VALIDATION ON LOAD
         try {
         const { errors, warnings } = await methods.validateDiagram();
 
         setValidationResults({ errors, warnings });
         methods.applyValidationMarkers(errors, warnings);
+
+        // ✅ SAFE POINT: XML fully ready
+        if (onTasksExtracted && methods.extractTasks) {
+            const tasks = methods.extractTasks();
+            onTasksExtracted(tasks);
+        }
+
 
         // Optional: show blocking message immediately
         if (errors.length > 0) {
@@ -154,6 +164,23 @@ export const BpmnEditor = ({
         setIsSaving(false);
     }
     };
+
+    useEffect(() => {
+        if (!modelerMethodsRef.current) return;
+        if (!taskDataJson) return;
+        if (taskDataJson === lastAppliedTaskJsonRef.current) return;
+
+        try {
+            const tasks = JSON.parse(taskDataJson);
+            if (modelerMethodsRef.current?.updateTasks) {
+               modelerMethodsRef.current.updateTasks(tasks);
+            }
+            lastAppliedTaskJsonRef.current = taskDataJson;
+        } catch (e) {
+            console.error("Invalid task master data JSON", e);
+        }
+    }, [taskDataJson]);
+
 
 
     /**

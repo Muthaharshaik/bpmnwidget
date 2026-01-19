@@ -25,6 +25,8 @@ export function Bpmnwidget(props) {
         bpmnName,
         onSaveAction,
         onCancelAction,
+        onTasksExtracted,
+        taskDataJson,
         class: className,
         style,
         tabIndex
@@ -83,6 +85,14 @@ export function Bpmnwidget(props) {
         }
     }, [onCancelAction]);
 
+    
+    const handleTasksExtracted = useCallback((tasks) => {
+        if (onTasksExtracted && onTasksExtracted.canExecute) {
+            onTasksExtracted.execute(JSON.stringify(tasks));
+        }
+        }, [onTasksExtracted]);
+
+
     /**
      * Loading state check
      * Don't render until Mendix data is ready
@@ -121,7 +131,8 @@ export function Bpmnwidget(props) {
                 onSave={handleSave}
                 onCancel={handleCancel}
                 bpmnFile={currentBpmnName}
-
+                onTasksExtracted={handleTasksExtracted}
+                taskDataJson={taskDataJson?.value}
             />
         </div>
     );

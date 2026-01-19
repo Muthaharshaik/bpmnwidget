@@ -47,6 +47,20 @@
                 <caption>On Cancel</caption>
                 <description>Action triggered when the user cancels editing</description>
             </property>
+
+            <property key="onTasksExtracted" type="action" required="false">
+                <caption>On Tasks Extracted</caption>
+                <description>Triggered when task list is extracted</description>
+            </property>
+
+            <property key="taskDataJson" type="attribute" required="false">
+                <caption>Task Master Data (JSON)</caption>
+                <description>JSON containing updated task master data</description>
+                <attributeTypes>
+                    <attributeType name="String"/>
+                </attributeTypes>
+            </property>
+
         </propertyGroup>
 
     </properties>

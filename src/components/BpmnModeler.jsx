@@ -5,6 +5,9 @@ import ColorPickerModule  from 'bpmn-js-color-picker';
 import { validateDiagram as runValidation } from "../validations";
 import TokenSimulationModeler from "bpmn-js-token-simulation/lib/modeler";
 import { useTokenSimulation } from "../hooks/useTokenSimulation";
+import { extractTasks } from "../utils/taskExtractor";
+import { updateTasks } from "../utils/taskUpdater";
+
 
 
 
@@ -143,6 +146,8 @@ export const BpmnModelerComponent = ({
                         applyValidationMarkers,
                         fitAndCenter: () => fitAndCenter(modelerRef.current),
                         getModeler: () => modelerRef.current,
+                        extractTasks: () => extractTasks(modelerRef.current),
+                        updateTasks: (tasks) => updateTasks(modelerRef.current, tasks)
                     });
                 }
             })
