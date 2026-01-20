@@ -367,7 +367,7 @@ export const BpmnModelerComponent = ({
         });
     }, []);
 
-   const focusElement = useCallback((elementId) => {
+    const focusElement = useCallback((elementId) => {
         if (!modelerRef.current || !elementId) return;
 
         const canvas = modelerRef.current.get("canvas");
