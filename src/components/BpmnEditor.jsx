@@ -8,6 +8,7 @@ import downloadIcon from "../assets/download.svg";
 import keyboardIcon from "../assets/keyboard.svg";
 import downIcon from "../assets/chevron-down.svg"
 import jsPDF from "jspdf";
+import { applyBottleneckColors, clearBottleneckColors } from "../utils/bottleneckAnalyzer";
 
 /**
  * BpmnEditor Component
@@ -44,6 +45,7 @@ export const BpmnEditor = ({
     const [isSimulationMode, setIsSimulationMode] = useState(false);
     const [validationResults, setValidationResults] = useState({  errors: [], warnings: []});
     const [isValidationOpen, setIsValidationOpen] = useState(false)
+    const [isBottleneckMode, setIsBottleneckMode] = useState(false);
 
 
     
@@ -196,22 +198,22 @@ export const BpmnEditor = ({
     }
     };
 
-useEffect(() => {
-    if (!modelerMethodsRef.current) return;
-    if (!taskDataJson) return;
-    if (taskDataJson === lastAppliedTaskJsonRef.current) return;
+    useEffect(() => {
+        if (!modelerMethodsRef.current) return;
+        if (!taskDataJson) return;
+        if (taskDataJson === lastAppliedTaskJsonRef.current) return;
 
-    try {
-        const tasks = JSON.parse(taskDataJson);
-        if (modelerMethodsRef.current?.updateTasks) {
-            modelerMethodsRef.current.updateTasks(tasks);
+        try {
+            const tasks = JSON.parse(taskDataJson);
+            if (modelerMethodsRef.current?.updateTasks) {
+                modelerMethodsRef.current.updateTasks(tasks);
+            }
+            
+            lastAppliedTaskJsonRef.current = taskDataJson;
+        } catch (e) {
+                console.error("Invalid task master data JSON", e);
         }
-        
-        lastAppliedTaskJsonRef.current = taskDataJson;
-    } catch (e) {
-            console.error("Invalid task master data JSON", e);
-    }
-}, [taskDataJson]);
+    }, [taskDataJson]);
 
 
 
@@ -262,6 +264,39 @@ useEffect(() => {
             return null;
         }
         return name.trim();
+    }
+
+    /**
+     * Function to handle bottleneck analysis
+     */
+    const handleBottleneckAnalysis = () => {
+        if (!modelerMethodsRef.current?.extractTasks || !modelerMethodsRef.current?.getModeler) {
+            return;
+        }
+        const modeler = modelerMethodsRef.current.getModeler();
+        if (isBottleneckMode) {
+            //turnoff the bottleneck mode
+            clearBottleneckColors(modeler);
+            setIsBottleneckMode(false)
+        } else {
+            const tasks = modelerMethodsRef.current.extractTasks();
+            const tasksWithDuration = tasks.filter(t => t.duration && t.duration.trim() !== "");
+            if (tasksWithDuration.length === 0) {
+                alert("No tasks with duration found, please add duration to the tasks first")
+                return;
+            }
+            applyBottleneckColors(modeler, tasks)
+            setIsBottleneckMode(true)
+        }
+    }
+
+    /**
+     * Function to focus on task when it is clicked.
+     */
+    const handleTaskFocus = (taskId) => {
+        if(modelerMethodsRef.current?.focusElement) {
+            modelerMethodsRef.current.focusElement(taskId);
+        }
     }
 
     /**
@@ -613,6 +648,16 @@ useEffect(() => {
                         disabled={isLoading}
                     >
                         <img src={keyboardIcon} style={{width: 18, height:18}} alt="Key Board" />
+                    </button>
+                   {/* In the toolbar center section, add this button: */}
+                    <button
+                        type="button"
+                        className={`bpmn-btn bpmn-btn-secondary bpmn-btn-bottleneck ${isBottleneckMode ? 'active' : ''}`}
+                        onClick={handleBottleneckAnalysis}
+                        disabled={isLoading}
+                        title="Show tasks with high duration in red"
+                    >
+                        {isBottleneckMode ? 'Hide Bottleneck' : 'Show Bottleneck'}
                     </button>
                 </div>
            

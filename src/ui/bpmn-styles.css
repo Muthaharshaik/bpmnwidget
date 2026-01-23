@@ -21,6 +21,7 @@
 @import "bpmn-js/dist/assets/bpmn-font/css/bpmn-embedded.css";
 @import "bpmn-js-color-picker/colors/color-picker.css";
 @import "bpmn-js-token-simulation/assets/css/bpmn-js-token-simulation.css";
+@import "@bpmn-io/properties-panel/dist/assets/properties-panel.css";
 
 
 /* ===================================
@@ -282,6 +283,7 @@
     font-size: 13px;
     overflow: hidden;
     transition: width 0.25s ease;
+    display: none;
 }
 
 .bpmn-validation-panel.collapsed {
@@ -1120,6 +1122,10 @@
   background-color: #ff4d4f;
   color: white;
   border-color: #ff4d4f;
+}
+
+.bio-properties-panel-group-header.empty::before {
+  content: none !important;
 }
 
 

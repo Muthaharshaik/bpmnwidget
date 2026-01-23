@@ -8,6 +8,8 @@ import { useTokenSimulation } from "../hooks/useTokenSimulation";
 import { extractTasks } from "../utils/taskExtractor";
 import { updateTasks } from "../utils/taskUpdater";
 import { customModdle } from "../utils/customModdle";
+import { BpmnPropertiesPanelModule, BpmnPropertiesProviderModule} from "bpmn-js-properties-panel";
+
 
 
 
@@ -111,10 +113,15 @@ export const BpmnModelerComponent = ({
 
         const modeler = new BpmnModeler({
             container: containerRef.current,
+            propertiesPanel: {
+                parent: '#js-properties-panel'
+            },
             additionalModules: [
                 CreateAppendAnythingModule,
                 ColorPickerModule,
-                TokenSimulationModeler
+                TokenSimulationModeler,
+                BpmnPropertiesPanelModule, 
+                BpmnPropertiesProviderModule
             ],
             moddleExtensions: {
                 custom: customModdle
@@ -435,18 +442,19 @@ export const BpmnModelerComponent = ({
         });
     }, []);
 
-    return (
-            <div 
-                ref={containerRef} 
-                className="bpmn-modeler-container"
-                tabIndex={0}
-                style={{ 
-                    width: "100%", 
-                    height: "100%",
-                    backgroundColor: "#ffffff"
-                }}
-            />
-    );
+        return (
+            <div style={{ display: 'flex', height: '100%' }}>
+                <div 
+                    ref={containerRef} 
+                    className="bpmn-modeler-container"
+                    style={{ flex: 1 }}
+                />
+                <div 
+                    id="js-properties-panel" 
+                    style={{ width: '300px', overflow: 'auto', border:'1.2px solid lightgrey', margin:'4px' }}
+                />
+            </div>
+        );
 };
 
 export default BpmnModelerComponent;
