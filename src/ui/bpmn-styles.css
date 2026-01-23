@@ -276,16 +276,26 @@
    =================================== */
 
 .bpmn-validation-panel {
-    width: 280px;
     border-left: 1px solid #d0d0d0;
     background-color: #fafafa;
-    padding: 10px;
-    overflow-y: auto;
+   
     font-size: 13px;
+    overflow: hidden;
+    transition: width 0.25s ease;
 }
 
+.bpmn-validation-panel.collapsed {
+  width: 120px;
+}
+
+.bpmn-validation-panel.open {
+  width: 280px;
+}
+
+
+
 .bpmn-validation-panel h4 {
-    margin: 0 0 10px 0;
+    margin: 0;
     font-size: 14px;
     font-weight: 600;
     color: #2d2d2d;
@@ -310,6 +320,10 @@
     cursor: pointer;
     line-height: 1.4;
     transition: background-color 0.15s ease;
+}
+
+.validation-content {
+    margin:6px;
 }
 
 .validation-item.error {
@@ -347,6 +361,33 @@
     margin-left: 8px;
 }
 
+.validation-title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    padding: 6px 8px;
+    border: 1px solid lightgray;
+    border-radius: 4px;
+    background: #fff;
+    margin:4px;
+}
+
+.validation-title h4 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.validation-arrow {
+  width: 18px;
+  height: 18px;
+  transition: transform 0.2s ease;
+}
+
+.validation-arrow.rotated {
+  transform: rotate(180deg);
+}
 
 
 
@@ -577,7 +618,7 @@
 }
 
 .djs-palette-shown.djs-palette-two-column .bjs-breadcrumbs {
-  left: 140px;
+  left: 185px;
 }
 
 .bjs-breadcrumbs li {
@@ -849,6 +890,237 @@
   position: relative;
 }
 
+:fullscreen .bpmn-modeler-container {
+  background: white;
+}
+
+/* Bottleneck Analysis Colors */
+.bottleneck-critical .djs-visual > :nth-child(1) {
+  fill: #ff4d4f !important;
+  stroke: #cf1322 !important;
+  stroke-width: 3px !important;
+}
+
+.bottleneck-high .djs-visual > :nth-child(1) {
+  fill: #ff7a45 !important;
+  stroke: #d4380d !important;
+  stroke-width: 2px !important;
+}
+
+.bottleneck-medium .djs-visual > :nth-child(1) {
+  fill: #ffa940 !important;
+  stroke: #d46b08 !important;
+  stroke-width: 2px !important;
+}
+
+.bottleneck-low .djs-visual > :nth-child(1) {
+  fill: #52c41a !important;
+  stroke: #389e0d !important;
+  stroke-width: 1px !important;
+}
+
+/* Bottleneck Panel Styles */
+.bottleneck-panel {
+  position: absolute;
+  right: 0;
+  top: 60px;
+  bottom: 0;
+  width: 350px;
+  background: white;
+  border-left: 1px solid #d9d9d9;
+  box-shadow: -2px 0 8px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  z-index: 100;
+  transform: translateX(100%);
+  transition: transform 0.3s ease;
+}
+
+.bottleneck-panel.open {
+  transform: translateX(0);
+}
+
+.bottleneck-header {
+  padding: 16px;
+  border-bottom: 1px solid #f0f0f0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #fafafa;
+}
+
+.bottleneck-header h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.bottleneck-close {
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  color: #8c8c8c;
+  padding: 4px 8px;
+  line-height: 1;
+}
+
+.bottleneck-close:hover {
+  color: #262626;
+}
+
+.bottleneck-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+}
+
+.bottleneck-stats {
+  background: #f5f5f5;
+  padding: 12px;
+  border-radius: 4px;
+  margin-bottom: 16px;
+}
+
+.bottleneck-stat {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+
+.bottleneck-stat:last-child {
+  margin-bottom: 0;
+}
+
+.bottleneck-stat-label {
+  color: #595959;
+  font-weight: 500;
+}
+
+.bottleneck-stat-value {
+  color: #262626;
+  font-weight: 600;
+}
+
+.bottleneck-legend {
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.bottleneck-legend h4 {
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #262626;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+  font-size: 13px;
+}
+
+.legend-color {
+  width: 20px;
+  height: 20px;
+  border-radius: 3px;
+  margin-right: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.bottleneck-tasks {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.bottleneck-task-item {
+  padding: 12px;
+  border-radius: 4px;
+  border: 1px solid #f0f0f0;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.bottleneck-task-item:hover {
+  border-color: #1890ff;
+  box-shadow: 0 2px 8px rgba(24, 144, 255, 0.2);
+}
+
+.bottleneck-task-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.bottleneck-task-severity {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  margin-right: 8px;
+  flex-shrink: 0;
+}
+
+.bottleneck-task-name {
+  font-weight: 600;
+  font-size: 14px;
+  color: #262626;
+  flex: 1;
+}
+
+.bottleneck-task-details {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: #595959;
+}
+
+.bottleneck-task-duration {
+  font-weight: 600;
+  color: #262626;
+}
+
+.bottleneck-empty {
+  text-align: center;
+  padding: 40px 20px;
+  color: #8c8c8c;
+}
+
+.bottleneck-empty-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+  opacity: 0.3;
+}
+
+/* Button styling */
+.bpmn-btn-bottleneck {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.bpmn-btn-bottleneck.active {
+  background-color: #1890ff;
+  color: white;
+  border-color: #1890ff;
+}
+
+/* Simple Bottleneck - Red for high duration tasks */
+.bottleneck-high .djs-visual > :nth-child(1) {
+  fill: #ff4d4f !important;
+  stroke: #cf1322 !important;
+  stroke-width: 3px !important;
+}
+
+/* Button styling */
+.bpmn-btn-bottleneck.active {
+  background-color: #ff4d4f;
+  color: white;
+  border-color: #ff4d4f;
+}
 
 
 /* Responsive */

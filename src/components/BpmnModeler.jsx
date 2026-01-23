@@ -7,6 +7,7 @@ import TokenSimulationModeler from "bpmn-js-token-simulation/lib/modeler";
 import { useTokenSimulation } from "../hooks/useTokenSimulation";
 import { extractTasks } from "../utils/taskExtractor";
 import { updateTasks } from "../utils/taskUpdater";
+import { customModdle } from "../utils/customModdle";
 
 
 
@@ -49,7 +50,8 @@ export const BpmnModelerComponent = ({
     onError,
     onModelerReady,
     editorActionsRef,
-    onValidate
+    onValidate,
+    isSimulationMode
 }) => {
     const containerRef = useRef(null);
     const modelerRef = useRef(null);
@@ -113,7 +115,10 @@ export const BpmnModelerComponent = ({
                 CreateAppendAnythingModule,
                 ColorPickerModule,
                 TokenSimulationModeler
-            ]
+            ],
+            moddleExtensions: {
+                custom: customModdle
+            }
         });
 
         modelerRef.current = modeler;
@@ -309,6 +314,21 @@ export const BpmnModelerComponent = ({
             onError?.(err);
         });
     }, [initialXml, onError]);
+
+    
+
+    useEffect(() => {
+        if (!modelerRef.current) return;
+
+        const modeler = modelerRef.current;
+        const canvas = modeler.get("canvas");
+
+        if (isSimulationMode) {
+            fitAndCenter(modeler)
+        }
+    }, [isSimulationMode]);
+
+
 
 
     /**

@@ -6,6 +6,7 @@ import minusIcon from "../assets/zoom-out.svg";
 import resetIcon from "../assets/move-diagonal.svg";
 import downloadIcon from "../assets/download.svg";
 import keyboardIcon from "../assets/keyboard.svg";
+import downIcon from "../assets/chevron-down.svg"
 import jsPDF from "jspdf";
 
 /**
@@ -40,7 +41,9 @@ export const BpmnEditor = ({
     const [open, setOpen] = useState(false);
     const [currentXml, setCurrentXml] = useState(initialXml);
     const [showKeyboardShortcuts, setShowKeyboardShortcuts] = useState(false);
+    const [isSimulationMode, setIsSimulationMode] = useState(false);
     const [validationResults, setValidationResults] = useState({  errors: [], warnings: []});
+    const [isValidationOpen, setIsValidationOpen] = useState(false)
 
 
     
@@ -92,6 +95,17 @@ export const BpmnEditor = ({
     const handleModelerReady = async (methods) => {
         modelerMethodsRef.current = methods;
         setIsLoading(false);
+
+        const modeler = methods.getModeler();
+        const eventBus = modeler.get("eventBus");
+
+        // ✅ TOKEN SIMULATION TOGGLE (THIS IS THE KEY)
+        const onToggleMode = (event) => {
+            console.info("Simulation mode toggled:", event.active);
+            setIsSimulationMode(!!event.active);
+        };
+
+        eventBus.on("tokenSimulation.toggleMode", onToggleMode);
         // 🔁 AUTO-RUN VALIDATION ON LOAD
         try {
         const { errors, warnings } = await methods.validateDiagram();
@@ -115,6 +129,18 @@ export const BpmnEditor = ({
         }
     };
 
+    useEffect(() => {
+        const el = document.documentElement;
+
+        if (isSimulationMode) {
+            if (el.requestFullscreen) el.requestFullscreen();
+        } else {
+            if (document.fullscreenElement) {
+            document.exitFullscreen();
+            }
+        }
+    }, [isSimulationMode]);
+
     /**
      * Handle errors from the modeler
      */
@@ -137,7 +163,7 @@ export const BpmnEditor = ({
         setIsSaving(true);
         setError(null);
 
-        // 🔴 VALIDATION FIRST
+        // VALIDATION FIRST
         const { errors, warnings  } = await modelerMethodsRef.current.validateDiagram();
 
         setValidationResults({ errors, warnings });
@@ -145,6 +171,11 @@ export const BpmnEditor = ({
         if (errors.length > 0) {
         setError("Please fix validation errors before saving.");
         return;
+        }
+
+        if (onTasksExtracted && modelerMethodsRef.current.extractTasks) {
+            const tasks = modelerMethodsRef.current.extractTasks();
+            onTasksExtracted(tasks);
         }
 
         // ✅ SAFE TO SAVE
@@ -165,21 +196,22 @@ export const BpmnEditor = ({
     }
     };
 
-    useEffect(() => {
-        if (!modelerMethodsRef.current) return;
-        if (!taskDataJson) return;
-        if (taskDataJson === lastAppliedTaskJsonRef.current) return;
+useEffect(() => {
+    if (!modelerMethodsRef.current) return;
+    if (!taskDataJson) return;
+    if (taskDataJson === lastAppliedTaskJsonRef.current) return;
 
-        try {
-            const tasks = JSON.parse(taskDataJson);
-            if (modelerMethodsRef.current?.updateTasks) {
-               modelerMethodsRef.current.updateTasks(tasks);
-            }
-            lastAppliedTaskJsonRef.current = taskDataJson;
-        } catch (e) {
-            console.error("Invalid task master data JSON", e);
+    try {
+        const tasks = JSON.parse(taskDataJson);
+        if (modelerMethodsRef.current?.updateTasks) {
+            modelerMethodsRef.current.updateTasks(tasks);
         }
-    }, [taskDataJson]);
+        
+        lastAppliedTaskJsonRef.current = taskDataJson;
+    } catch (e) {
+            console.error("Invalid task master data JSON", e);
+    }
+}, [taskDataJson]);
 
 
 
@@ -204,14 +236,15 @@ export const BpmnEditor = ({
         canvas.zoom(Math.min(canvas.zoom() + 0.1, MAX_ZOOM));
     };
 
-    const handleZoomOut = () => {
-    if (!modelerMethodsRef.current?.getModeler) return;
+   const handleZoomOut = () => {
+        if (!modelerMethodsRef.current?.getModeler) return;
 
-    const modeler = modelerMethodsRef.current.getModeler();
-    const canvas = modeler.get("canvas");
+        const modeler = modelerMethodsRef.current.getModeler();
+        const canvas = modeler.get("canvas");
 
-    canvas.zoom(Math.max(canvas.zoom() - 0.1, MIN_ZOOM));
+        canvas.zoom(Math.max(canvas.zoom() - 0.1, MIN_ZOOM));
     };
+
 
 
     /**
@@ -454,6 +487,7 @@ export const BpmnEditor = ({
     return (
         <div className="bpmn-editor-container">
             {/* Toolbar */}
+            {!isSimulationMode && (
             <div className="bpmn-toolbar">
                 <div className="bpmn-toolbar-left">
                     <h3 className="bpmn-title">
@@ -581,6 +615,7 @@ export const BpmnEditor = ({
                         <img src={keyboardIcon} style={{width: 18, height:18}} alt="Key Board" />
                     </button>
                 </div>
+           
 
                 <div className="bpmn-toolbar-right">
                     {/* Action buttons */}
@@ -606,6 +641,8 @@ export const BpmnEditor = ({
                     )}
                 </div>
             </div>
+            )}
+
 
             {/* Error display */}
             {error && (
@@ -645,60 +682,86 @@ export const BpmnEditor = ({
                     setValidationResults({ errors, warnings });
                     modelerMethodsRef.current?.applyValidationMarkers(errors, warnings);
                 }}
+                isSimulationMode={isSimulationMode}
                 />
             </div>
 
             {/* Validation Panel (RIGHT SIDE) */}
-            <div className="bpmn-validation-panel">
-                <h4>Validation</h4>
-            {/* ERRORS */}
-            {validationResults.errors.length > 0 && (
-            <div>
-                <h5 className="error-title">Errors</h5>
-                {validationResults.errors.map((e, i) => (
+            {!isSimulationMode && (
+            <div
+                className={`bpmn-validation-panel ${
+                isValidationOpen ? "open" : "collapsed"
+                }`}
+            >
+                {/* Header */}
                 <div
-                    key={`error-${i}`}
-                    className="validation-item error"
-                    onClick={() =>
-                    modelerMethodsRef.current?.focusElement(e.elementId)
-                    }
+                className="validation-title"
+                onClick={() => setIsValidationOpen(prev => !prev)}
                 >
-                    {e.message}
+                <h4>Validation</h4>
+                <img
+                    src={downIcon}
+                    alt="toggle validation"
+                    className={`validation-arrow ${
+                    isValidationOpen ? "rotated" : ""
+                    }`}
+                />
                 </div>
-                ))}
-            </div>
-            )}
 
-            {/* WARNINGS */}
-            {Object.keys(groupedWarnings).length > 0 && (
-            <div>
-                <h5 className="warning-title">Warnings</h5>
+                {/* Content */}
+                {isValidationOpen && (
+                <div className="validation-content">
+                    {/* ERRORS */}
+                    {validationResults.errors.length > 0 && (
+                    <div className="validation-errors">
+                        <h5 className="error-title">Errors</h5>
 
-                {Object.entries(groupedWarnings).map(([ruleId, items]) => (
-                <div key={ruleId} className="validation-group">
-                    <div className="validation-group-title">
-                    ⚠ {items.length} issue(s): {items[0].message}
-                    </div>
-
-                    <div className="validation-group-items">
-                    {items.map((w, i) => (
+                        {validationResults.errors.map((e, i) => (
                         <div
-                        key={`${ruleId}-${i}`}
-                        className="validation-item warning"
-                        onClick={() =>
-                            modelerMethodsRef.current?.focusElement(w.elementId)
-                        }
+                            key={`error-${i}`}
+                            className="validation-item error"
+                            onClick={() =>
+                            modelerMethodsRef.current?.focusElement(e.elementId)
+                            }
                         >
-                        {w.elementId || "Global"}
+                            {e.message}
                         </div>
-                    ))}
+                        ))}
                     </div>
+                    )}
+
+                    {/* WARNINGS */}
+                    {Object.keys(groupedWarnings).length > 0 && (
+                    <div className="validation-warnings">
+                        <h5 className="warning-title">Warnings</h5>
+
+                        {Object.entries(groupedWarnings).map(([ruleId, items]) => (
+                        <div key={ruleId} className="validation-group">
+                            <div className="validation-group-title">
+                            ⚠ {items.length} issue(s): {items[0].message}
+                            </div>
+
+                            <div className="validation-group-items">
+                            {items.map((w, i) => (
+                                <div
+                                key={`${ruleId}-${i}`}
+                                className="validation-item warning"
+                                onClick={() =>
+                                    modelerMethodsRef.current?.focusElement(w.elementId)
+                                }
+                                >
+                                {w.elementId || "Global"}
+                                </div>
+                            ))}
+                            </div>
+                        </div>
+                        ))}
+                    </div>
+                    )}
                 </div>
-                ))}
+                )}
             </div>
             )}
-
-            </div>
 
             </div>
 

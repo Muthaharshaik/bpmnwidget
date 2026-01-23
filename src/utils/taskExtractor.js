@@ -1,26 +1,21 @@
 export function extractTasks(modeler) {
-    const elementRegistry = modeler.get("elementRegistry");
+  const elementRegistry = modeler.get("elementRegistry");
 
-    return elementRegistry.getAll()
-        .filter(el =>
-            el.businessObject &&
-            el.businessObject.$type &&
-            el.businessObject.$type.endsWith("Task")
-        )
-        .map(el => {
-            const bo = el.businessObject;
-            const ext = bo.extensionElements?.values?.[0] || {};
+  return elementRegistry.getAll()
+    .filter(el => el.businessObject?.$type?.endsWith("Task"))
+    .map(el => {
+      const bo = el.businessObject;
 
-            return {
-                taskId: bo.id,
-                name: bo.name || "",
-                type: bo.$type,
-                metrics: {
-                    duration: ext.duration || null,
-                    sla: ext.sla || null,
-                    capacity: ext.capacity || null,
-                    bottleneck: ext.bottleneck === "true"
-                }
-            };
-        });
+      const extElements = bo.extensionElements?.values || [];
+      const taskMetrics = extElements.find(
+        v => v.$type === "custom:taskMetrics"
+      );
+
+      return {
+        taskId: bo.id,
+        name: bo.name || "",
+        type: bo.$type,
+        duration: taskMetrics?.duration || ""  // ✅ This will work fine!
+      };
+    });
 }

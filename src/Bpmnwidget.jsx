@@ -25,7 +25,6 @@ export function Bpmnwidget(props) {
         bpmnName,
         onSaveAction,
         onCancelAction,
-        onTasksExtracted,
         taskDataJson,
         class: className,
         style,
@@ -85,13 +84,11 @@ export function Bpmnwidget(props) {
         }
     }, [onCancelAction]);
 
-    
     const handleTasksExtracted = useCallback((tasks) => {
-        if (onTasksExtracted && onTasksExtracted.canExecute) {
-            onTasksExtracted.execute(JSON.stringify(tasks));
+        if (taskDataJson && taskDataJson.status === "available") {
+            taskDataJson.setValue(JSON.stringify(tasks));
         }
-        }, [onTasksExtracted]);
-
+    }, [taskDataJson]);
 
     /**
      * Loading state check
