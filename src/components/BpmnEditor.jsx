@@ -6,34 +6,27 @@ import minusIcon from "../assets/zoom-out.svg";
 import resetIcon from "../assets/move-diagonal.svg";
 import downloadIcon from "../assets/download.svg";
 import keyboardIcon from "../assets/keyboard.svg";
-import downIcon from "../assets/chevron-down.svg"
+import downIcon from "../assets/chevron-down.svg";
 import jsPDF from "jspdf";
 import { applyBottleneckColors, clearBottleneckColors } from "../utils/bottleneckAnalyzer";
 
 /**
  * BpmnEditor Component
- * 
+ *
  * This is the main UI component that users interact with.
  * It includes:
  * - The BPMN canvas (via BpmnModelerComponent)
  * - Toolbar with Save and Cancel buttons
  * - Error display
  * - Loading state
- * 
+ *
  * Props:
  * - initialXml: Initial BPMN XML to load
  * - onSave: Callback function(xml) when user saves
  * - onCancel: Callback function when user cancels
  */
 
-export const BpmnEditor = ({ 
-    initialXml, 
-    onSave, 
-    onCancel,
-    bpmnFile,
-    onTasksExtracted,
-    taskDataJson
-}) => {
+export const BpmnEditor = ({ initialXml, onSave, onCancel, bpmnFile, onTasksExtracted, taskDataJson }) => {
     // State management
     const [error, setError] = useState(null);
     const [isSaving, setIsSaving] = useState(false);
@@ -43,12 +36,11 @@ export const BpmnEditor = ({
     const [currentXml, setCurrentXml] = useState(initialXml);
     const [showKeyboardShortcuts, setShowKeyboardShortcuts] = useState(false);
     const [isSimulationMode, setIsSimulationMode] = useState(false);
-    const [validationResults, setValidationResults] = useState({  errors: [], warnings: []});
-    const [isValidationOpen, setIsValidationOpen] = useState(false)
+    const [validationResults, setValidationResults] = useState({ errors: [], warnings: [] });
+    const [isValidationOpen, setIsValidationOpen] = useState(false);
     const [isBottleneckMode, setIsBottleneckMode] = useState(false);
+    const [isPropertiesOpen, setIsPropertiesOpen] = useState(true);
 
-
-    
     // Refs
     const fileInputRef = useRef(null);
     const modelerMethodsRef = useRef(null);
@@ -61,10 +53,7 @@ export const BpmnEditor = ({
      * This prevents unwanted re-imports when user is editing
      */
     useEffect(() => {
-        if (initialXml && 
-            initialXml !== lastLoadedXmlRef.current && 
-            initialXml.trim().length > 100) {
-            
+        if (initialXml && initialXml !== lastLoadedXmlRef.current && initialXml.trim().length > 100) {
             console.log("New diagram detected, reloading editor");
             setCurrentXml(initialXml);
             lastLoadedXmlRef.current = initialXml;
@@ -75,26 +64,26 @@ export const BpmnEditor = ({
      * Close dropdown menu when clicking outside
      */
     useEffect(() => {
-        const handleClickOutside = (event) => {
-            const downloadWrapper = event.target.closest('.download-wrapper');
+        const handleClickOutside = event => {
+            const downloadWrapper = event.target.closest(".download-wrapper");
             if (!downloadWrapper && open) {
                 setOpen(false);
             }
         };
 
         if (open) {
-            document.addEventListener('mousedown', handleClickOutside);
+            document.addEventListener("mousedown", handleClickOutside);
         }
 
         return () => {
-            document.removeEventListener('mousedown', handleClickOutside);
+            document.removeEventListener("mousedown", handleClickOutside);
         };
     }, [open]);
 
     /**
      * Handle modeler initialization
      */
-    const handleModelerReady = async (methods) => {
+    const handleModelerReady = async methods => {
         modelerMethodsRef.current = methods;
         setIsLoading(false);
 
@@ -102,7 +91,7 @@ export const BpmnEditor = ({
         const eventBus = modeler.get("eventBus");
 
         // ✅ TOKEN SIMULATION TOGGLE (THIS IS THE KEY)
-        const onToggleMode = (event) => {
+        const onToggleMode = event => {
             console.info("Simulation mode toggled:", event.active);
             setIsSimulationMode(!!event.active);
         };
@@ -110,24 +99,23 @@ export const BpmnEditor = ({
         eventBus.on("tokenSimulation.toggleMode", onToggleMode);
         // 🔁 AUTO-RUN VALIDATION ON LOAD
         try {
-        const { errors, warnings } = await methods.validateDiagram();
+            const { errors, warnings } = await methods.validateDiagram();
 
-        setValidationResults({ errors, warnings });
-        methods.applyValidationMarkers(errors, warnings);
+            setValidationResults({ errors, warnings });
+            methods.applyValidationMarkers(errors, warnings);
 
-        // ✅ SAFE POINT: XML fully ready
-        if (onTasksExtracted && methods.extractTasks) {
-            const tasks = methods.extractTasks();
-            onTasksExtracted(tasks);
-        }
+            // ✅ SAFE POINT: XML fully ready
+            if (onTasksExtracted && methods.extractTasks) {
+                const tasks = methods.extractTasks();
+                onTasksExtracted(tasks);
+            }
 
-
-        // Optional: show blocking message immediately
-        if (errors.length > 0) {
-            setError("Please fix validation errors.");
-        }
+            // Optional: show blocking message immediately
+            if (errors.length > 0) {
+                setError("Please fix validation errors.");
+            }
         } catch (e) {
-        console.error("Auto validation failed", e);
+            console.error("Auto validation failed", e);
         }
     };
 
@@ -138,7 +126,7 @@ export const BpmnEditor = ({
             if (el.requestFullscreen) el.requestFullscreen();
         } else {
             if (document.fullscreenElement) {
-            document.exitFullscreen();
+                document.exitFullscreen();
             }
         }
     }, [isSimulationMode]);
@@ -146,7 +134,7 @@ export const BpmnEditor = ({
     /**
      * Handle errors from the modeler
      */
-    const handleError = (err) => {
+    const handleError = err => {
         setError(err.message || "An error occurred while loading the diagram");
         setIsLoading(false);
     };
@@ -156,46 +144,44 @@ export const BpmnEditor = ({
      * Exports XML from modeler and calls parent's onSave callback
      */
     const handleSave = async () => {
-    if (!modelerMethodsRef.current) {
-        setError("Modeler not ready");
-        return;
-    }
-
-    try {
-        setIsSaving(true);
-        setError(null);
-
-        // VALIDATION FIRST
-        const { errors, warnings  } = await modelerMethodsRef.current.validateDiagram();
-
-        setValidationResults({ errors, warnings });
-        modelerMethodsRef.current.applyValidationMarkers(errors, warnings);
-        if (errors.length > 0) {
-        setError("Please fix validation errors before saving.");
-        return;
+        if (!modelerMethodsRef.current) {
+            setError("Modeler not ready");
+            return;
         }
 
-        if (onTasksExtracted && modelerMethodsRef.current.extractTasks) {
-            const tasks = modelerMethodsRef.current.extractTasks();
-            onTasksExtracted(tasks);
+        try {
+            setIsSaving(true);
+            setError(null);
+
+            // VALIDATION FIRST
+            const { errors, warnings } = await modelerMethodsRef.current.validateDiagram();
+
+            setValidationResults({ errors, warnings });
+            modelerMethodsRef.current.applyValidationMarkers(errors, warnings);
+            if (errors.length > 0) {
+                setError("Please fix validation errors before saving.");
+                return;
+            }
+
+            if (onTasksExtracted && modelerMethodsRef.current.extractTasks) {
+                const tasks = modelerMethodsRef.current.extractTasks();
+                onTasksExtracted(tasks);
+            }
+
+            // ✅ SAFE TO SAVE
+            const xml = await modelerMethodsRef.current.exportXML();
+            const svg = await modelerMethodsRef.current.exportSVG();
+
+            const base64SVG = btoa(unescape(encodeURIComponent(svg)));
+            const dataURL = `data:image/svg+xml;base64,${base64SVG}`;
+
+            onSave?.(xml, dataURL);
+        } catch (err) {
+            console.error(err);
+            setError("Failed to save diagram");
+        } finally {
+            setIsSaving(false);
         }
-
-        // ✅ SAFE TO SAVE
-        const xml = await modelerMethodsRef.current.exportXML();
-        const svg = await modelerMethodsRef.current.exportSVG();
-
-        const base64SVG = btoa(unescape(encodeURIComponent(svg)));
-        const dataURL = `data:image/svg+xml;base64,${base64SVG}`;
-
-
-        onSave?.(xml, dataURL);
-
-    } catch (err) {
-        console.error(err);
-        setError("Failed to save diagram");
-    } finally {
-        setIsSaving(false);
-    }
     };
 
     useEffect(() => {
@@ -208,14 +194,12 @@ export const BpmnEditor = ({
             if (modelerMethodsRef.current?.updateTasks) {
                 modelerMethodsRef.current.updateTasks(tasks);
             }
-            
+
             lastAppliedTaskJsonRef.current = taskDataJson;
         } catch (e) {
-                console.error("Invalid task master data JSON", e);
+            console.error("Invalid task master data JSON", e);
         }
     }, [taskDataJson]);
-
-
 
     /**
      * Handle Cancel button click
@@ -226,10 +210,10 @@ export const BpmnEditor = ({
         }
     };
 
-   const MIN_ZOOM = 0.5;
-   const MAX_ZOOM = 2.5;
+    const MIN_ZOOM = 0.5;
+    const MAX_ZOOM = 2.5;
 
-   const handleZoomIn = () => {
+    const handleZoomIn = () => {
         if (!modelerMethodsRef.current?.getModeler) return;
 
         const modeler = modelerMethodsRef.current.getModeler();
@@ -238,7 +222,7 @@ export const BpmnEditor = ({
         canvas.zoom(Math.min(canvas.zoom() + 0.1, MAX_ZOOM));
     };
 
-   const handleZoomOut = () => {
+    const handleZoomOut = () => {
         if (!modelerMethodsRef.current?.getModeler) return;
 
         const modeler = modelerMethodsRef.current.getModeler();
@@ -246,8 +230,6 @@ export const BpmnEditor = ({
 
         canvas.zoom(Math.max(canvas.zoom() - 0.1, MIN_ZOOM));
     };
-
-
 
     /**
      * Handle Zoom to Fit
@@ -259,12 +241,12 @@ export const BpmnEditor = ({
     /**
      * Sanitize the file names
      */
-    const sanitizeFilename = (name) => {
+    const sanitizeFilename = name => {
         if (!name || !name.trim()) {
             return null;
         }
         return name.trim();
-    }
+    };
 
     /**
      * Function to handle bottleneck analysis
@@ -277,27 +259,27 @@ export const BpmnEditor = ({
         if (isBottleneckMode) {
             //turnoff the bottleneck mode
             clearBottleneckColors(modeler);
-            setIsBottleneckMode(false)
+            setIsBottleneckMode(false);
         } else {
             const tasks = modelerMethodsRef.current.extractTasks();
             const tasksWithDuration = tasks.filter(t => t.duration && t.duration.trim() !== "");
             if (tasksWithDuration.length === 0) {
-                alert("No tasks with duration found, please add duration to the tasks first")
+                alert("No tasks with duration found, please add duration to the tasks first");
                 return;
             }
-            applyBottleneckColors(modeler, tasks)
-            setIsBottleneckMode(true)
+            applyBottleneckColors(modeler, tasks);
+            setIsBottleneckMode(true);
         }
-    }
+    };
 
     /**
      * Function to focus on task when it is clicked.
      */
-    const handleTaskFocus = (taskId) => {
-        if(modelerMethodsRef.current?.focusElement) {
+    const handleTaskFocus = taskId => {
+        if (modelerMethodsRef.current?.focusElement) {
             modelerMethodsRef.current.focusElement(taskId);
         }
-    }
+    };
 
     /**
      * Handle Download as SVG
@@ -309,7 +291,7 @@ export const BpmnEditor = ({
 
         try {
             const svg = await modelerMethodsRef.current.exportSVG();
-            
+
             const blob = new Blob([svg], { type: "image/svg+xml" });
             const url = URL.createObjectURL(blob);
             const link = document.createElement("a");
@@ -332,23 +314,23 @@ export const BpmnEditor = ({
         if (!modelerMethodsRef.current?.exportXML) {
             return;
         }
-        
+
         try {
             const xml = await modelerMethodsRef.current.exportXML();
-            
+
             const blob = new Blob([xml], { type: "application/bpmn20+xml" });
             const url = URL.createObjectURL(blob);
             const link = document.createElement("a");
             link.href = url;
             link.download = `${sanitizeFilename(bpmnFile)}.bpmn`;
-            
+
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
             URL.revokeObjectURL(url);
-        } catch(error) {
-           console.error("Error downloading BPMN", error);
-           setError("Failed to download diagram");
+        } catch (error) {
+            console.error("Error downloading BPMN", error);
+            setError("Failed to download diagram");
         }
     };
 
@@ -363,91 +345,89 @@ export const BpmnEditor = ({
 
         try {
             setError(null);
-            
+
             // Export the diagram as SVG
             const svg = await modelerMethodsRef.current.exportSVG();
-            
+
             // Create a temporary image to get SVG dimensions
             const img = new Image();
-            const svgBlob = new Blob([svg], { type: 'image/svg+xml;charset=utf-8' });
+            const svgBlob = new Blob([svg], { type: "image/svg+xml;charset=utf-8" });
             const url = URL.createObjectURL(svgBlob);
-            
+
             img.onload = () => {
                 try {
                     // Get image dimensions
                     const imgWidth = img.width;
                     const imgHeight = img.height;
-                    
+
                     // Calculate PDF dimensions (A4 size with margins)
                     const pdfWidth = 210; // A4 width in mm
                     const pdfHeight = 297; // A4 height in mm
                     const margin = 10; // margin in mm
-                    
+
                     // Calculate scaling to fit the image on the page
-                    const maxWidth = pdfWidth - (2 * margin);
-                    const maxHeight = pdfHeight - (2 * margin);
-                    
+                    const maxWidth = pdfWidth - 2 * margin;
+                    const maxHeight = pdfHeight - 2 * margin;
+
                     let finalWidth = imgWidth;
                     let finalHeight = imgHeight;
-                    
+
                     // Scale down if image is larger than page
                     const widthRatio = maxWidth / (imgWidth * 0.264583); // px to mm conversion
                     const heightRatio = maxHeight / (imgHeight * 0.264583);
                     const ratio = Math.min(widthRatio, heightRatio, 1);
-                    
-                    finalWidth = (imgWidth * 0.264583) * ratio;
-                    finalHeight = (imgHeight * 0.264583) * ratio;
-                    
+
+                    finalWidth = imgWidth * 0.264583 * ratio;
+                    finalHeight = imgHeight * 0.264583 * ratio;
+
                     // Determine orientation based on dimensions
-                    const orientation = finalWidth > finalHeight ? 'landscape' : 'portrait';
-                    
+                    const orientation = finalWidth > finalHeight ? "landscape" : "portrait";
+
                     // Create PDF
                     const pdf = new jsPDF({
                         orientation: orientation,
-                        unit: 'mm',
-                        format: 'a4'
+                        unit: "mm",
+                        format: "a4"
                     });
-                    
+
                     // Center the image on the page
                     const x = (pdf.internal.pageSize.getWidth() - finalWidth) / 2;
                     const y = (pdf.internal.pageSize.getHeight() - finalHeight) / 2;
-                    
+
                     // Convert SVG to data URL
-                    const canvas = document.createElement('canvas');
+                    const canvas = document.createElement("canvas");
                     canvas.width = imgWidth;
                     canvas.height = imgHeight;
-                    const ctx = canvas.getContext('2d');
-                    
+                    const ctx = canvas.getContext("2d");
+
                     // Draw image on canvas
                     ctx.drawImage(img, 0, 0);
-                    
+
                     // Get image data as PNG
-                    const imgData = canvas.toDataURL('image/png');
-                    
+                    const imgData = canvas.toDataURL("image/png");
+
                     // Add image to PDF
-                    pdf.addImage(imgData, 'PNG', x, y, finalWidth, finalHeight);
-                    
+                    pdf.addImage(imgData, "PNG", x, y, finalWidth, finalHeight);
+
                     // Save the PDF
                     pdf.save(`${sanitizeFilename(bpmnFile)}.pdf`);
-                    
+
                     // Cleanup
                     URL.revokeObjectURL(url);
-                    
                 } catch (err) {
-                    console.error('Error creating PDF:', err);
-                    setError('Failed to generate PDF. Please try again.');
+                    console.error("Error creating PDF:", err);
+                    setError("Failed to generate PDF. Please try again.");
                     URL.revokeObjectURL(url);
                 }
             };
-            
+
             img.onerror = () => {
-                console.error('Error loading SVG image');
-                setError('Failed to load diagram for PDF generation');
+                console.error("Error loading SVG image");
+                setError("Failed to load diagram for PDF generation");
                 URL.revokeObjectURL(url);
             };
-            
+
             img.src = url;
-            
         } catch (err) {
             console.error("Error downloading PDF:", err);
             setError("Failed to download diagram as PDF");
@@ -457,58 +437,57 @@ export const BpmnEditor = ({
     /**
      * Handle file open from local filesystem
      */
-    const handleOpenFile = (event) => {
+    const handleOpenFile = event => {
         const file = event.target.files[0];
         if (!file) {
             return;
         }
-        
+
         // Validate file type
         const validExtensions = [".bpmn", ".xml", ".bpmn20.xml"];
-        const fileExtension = file.name.substring(file.name.lastIndexOf('.')).toLowerCase();
+        const fileExtension = file.name.substring(file.name.lastIndexOf(".")).toLowerCase();
         if (!validExtensions.includes(fileExtension)) {
-            setError('Invalid file type. Please select a .bpmn or .xml file');
+            setError("Invalid file type. Please select a .bpmn or .xml file");
             return;
         }
-        
+
         setIsImporting(true);
         setError(null);
-        
+
         const reader = new FileReader();
-        
-        reader.onload = (e) => {
+
+        reader.onload = e => {
             try {
                 const xmlContent = e.target.result;
-                
+
                 // Update XML state - this will trigger BpmnModeler to reload
                 setCurrentXml(xmlContent);
                 lastLoadedXmlRef.current = xmlContent;
                 setIsImporting(false);
-                
-            } catch(err) {
+            } catch (err) {
                 console.error("Error reading BPMN file:", err);
                 setError("Failed to import file. Please ensure it's a valid BPMN diagram.");
                 setIsImporting(false);
             }
         };
-        
+
         reader.onerror = () => {
             setError("Failed to read file. Please try again.");
             setIsImporting(false);
         };
-        
+
         // Read file as text
         reader.readAsText(file);
         // Reset input so same file can be selected again
-        event.target.value = '';
+        event.target.value = "";
     };
 
     useEffect(() => {
-    editorActionsRef.current = {
-        downloadPDF: handleDownloadPDF,
-        downloadSVG: handleDownloadSVG,
-        downloadBPMN: handleDownloadBPMN,
-    };
+        editorActionsRef.current = {
+            downloadPDF: handleDownloadPDF,
+            downloadSVG: handleDownloadSVG,
+            downloadBPMN: handleDownloadBPMN
+        };
     }, []);
 
     // 🔹 Group warnings by ruleId (UX improvement)
@@ -518,192 +497,181 @@ export const BpmnEditor = ({
         return acc;
     }, {});
 
-
     return (
         <div className="bpmn-editor-container">
             {/* Toolbar */}
             {!isSimulationMode && (
-            <div className="bpmn-toolbar">
-                <div className="bpmn-toolbar-left">
-                    <h3 className="bpmn-title">
-                        BPMN Diagram
-                    </h3>
-                </div>
+                <div className="bpmn-toolbar">
+                    <div className="bpmn-toolbar-left">
+                        <h3 className="bpmn-title">BPMN Diagram</h3>
+                    </div>
 
-                <div className="bpmn-toolbar-center">
-                    {/* Zoom controls */}
-                    <button
-                        type="button"
-                        className="bpmn-btn bpmn-btn-icon"
-                        onClick={handleZoomIn}
-                        title="Zoom In"
-                        disabled={isLoading}
-                    >
-                        <img src={plusIcon} style={{width:18, height:18}} alt="Zoom In" />
-                    </button>
-                    
-                    <button
-                        type="button"
-                        className="bpmn-btn bpmn-btn-icon"
-                        onClick={handleZoomOut}
-                        title="Zoom Out"
-                        disabled={isLoading}
-                    >
-                        <img src={minusIcon} style={{width:18, height:18}} alt="Zoom Out" />
-                    </button>
-                    
-                    <button
-                        type="button"
-                        className="bpmn-btn bpmn-btn-icon"
-                        onClick={handleZoomFit}
-                        title="Fit to Screen"
-                        disabled={isLoading}
-                    >
-                        <img src={resetIcon} style={{width:18, height:18}} alt="Fit to Screen" />
-                    </button>
-                    
-                    {/* Hidden file input */}
-                    <input
-                        ref={fileInputRef}
-                        type="file"
-                        accept=".bpmn,.xml,.bpmn20.xml"
-                        onChange={handleOpenFile}
-                        style={{ display: 'none' }}
-                    />
-                    
-                    {/* Open File button */}
-                    <button
-                        type="button"
-                        className="bpmn-btn bpmn-btn-secondary"
-                        onClick={() => fileInputRef.current?.click()}
-                        disabled={isLoading || isImporting}
-                        title="Open BPMN diagram from local file system"
-                    >
-                        <img src={folderIcon} style={{width:18, height:18}} alt="Open File" />
-                    </button>
-
-                    {/* Download dropdown menu */}
-                    <div className="download-wrapper">
+                    <div className="bpmn-toolbar-center">
+                        {/* Zoom controls */}
                         <button
                             type="button"
-                            className="bpmn-btn bpmn-btn-secondary download-btn"
-                            onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                setOpen(prev => !prev);
-                            }}
+                            className="bpmn-btn bpmn-btn-icon"
+                            onClick={handleZoomIn}
+                            title="Zoom In"
                             disabled={isLoading}
-                            title="Download diagram"
                         >
-                            <img src={downloadIcon} style={{width:18, height:18}} alt="Download" />
+                            <img src={plusIcon} style={{ width: 18, height: 18 }} alt="Zoom In" />
                         </button>
 
-                        {open && (
-                            <div 
-                                className="download-menu"
-                                onMouseDown={(e) => e.stopPropagation()}
-                            >
-                                <div 
-                                    className="download-item"
-                                    onClick={(e) => {
-                                        e.preventDefault();
-                                        e.stopPropagation();
-                                        handleDownloadSVG();
-                                        setOpen(false);
-                                    }}
-                                >
-                                    Download SVG
-                                </div>
-                                <div 
-                                    className="download-item" 
-                                    onClick={(e) => {
-                                        e.preventDefault();
-                                        e.stopPropagation();
-                                        handleDownloadBPMN();
-                                        setOpen(false);
-                                    }}
-                                >
-                                    Download BPMN
-                                </div>
-                                <div 
-                                    className="download-item"
-                                    onClick={(e) => {
-                                        e.preventDefault();
-                                        e.stopPropagation();
-                                        handleDownloadPDF();
-                                        setOpen(false);
-                                    }}
-                                >
-                                    Download PDF
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                    {/* KeyBoard shortcuts */}
-                    <button
-                        type="button"
-                        className="bpmn-btn bpmn-btn-secondary"
-                        onClick={() => setShowKeyboardShortcuts(true)}
-                        title="Keyboard Shortcuts"
-                        disabled={isLoading}
-                    >
-                        <img src={keyboardIcon} style={{width: 18, height:18}} alt="Key Board" />
-                    </button>
-                   {/* In the toolbar center section, add this button: */}
-                    <button
-                        type="button"
-                        className={`bpmn-btn bpmn-btn-secondary bpmn-btn-bottleneck ${isBottleneckMode ? 'active' : ''}`}
-                        onClick={handleBottleneckAnalysis}
-                        disabled={isLoading}
-                        title="Show tasks with high duration in red"
-                    >
-                        {isBottleneckMode ? 'Hide Bottleneck' : 'Show Bottleneck'}
-                    </button>
-                </div>
-           
+                        <button
+                            type="button"
+                            className="bpmn-btn bpmn-btn-icon"
+                            onClick={handleZoomOut}
+                            title="Zoom Out"
+                            disabled={isLoading}
+                        >
+                            <img src={minusIcon} style={{ width: 18, height: 18 }} alt="Zoom Out" />
+                        </button>
 
-                <div className="bpmn-toolbar-right">
-                    {/* Action buttons */}
-                    {onCancel && (
+                        <button
+                            type="button"
+                            className="bpmn-btn bpmn-btn-icon"
+                            onClick={handleZoomFit}
+                            title="Fit to Screen"
+                            disabled={isLoading}
+                        >
+                            <img src={resetIcon} style={{ width: 18, height: 18 }} alt="Fit to Screen" />
+                        </button>
+
+                        {/* Hidden file input */}
+                        <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept=".bpmn,.xml,.bpmn20.xml"
+                            onChange={handleOpenFile}
+                            style={{ display: "none" }}
+                        />
+
+                        {/* Open File button */}
                         <button
                             type="button"
                             className="bpmn-btn bpmn-btn-secondary"
-                            onClick={handleCancel}
-                            disabled={isSaving}
+                            onClick={() => fileInputRef.current?.click()}
+                            disabled={isLoading || isImporting}
+                            title="Open BPMN diagram from local file system"
                         >
-                            Cancel
+                            <img src={folderIcon} style={{ width: 18, height: 18 }} alt="Open File" />
                         </button>
-                    )}
-                    {onSave && (
+
+                        {/* Download dropdown menu */}
+                        <div className="download-wrapper">
+                            <button
+                                type="button"
+                                className="bpmn-btn bpmn-btn-secondary download-btn"
+                                onClick={e => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    setOpen(prev => !prev);
+                                }}
+                                disabled={isLoading}
+                                title="Download diagram"
+                            >
+                                <img src={downloadIcon} style={{ width: 18, height: 18 }} alt="Download" />
+                            </button>
+
+                            {open && (
+                                <div className="download-menu" onMouseDown={e => e.stopPropagation()}>
+                                    <div
+                                        className="download-item"
+                                        onClick={e => {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                            handleDownloadSVG();
+                                            setOpen(false);
+                                        }}
+                                    >
+                                        Download SVG
+                                    </div>
+                                    <div
+                                        className="download-item"
+                                        onClick={e => {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                            handleDownloadBPMN();
+                                            setOpen(false);
+                                        }}
+                                    >
+                                        Download BPMN
+                                    </div>
+                                    <div
+                                        className="download-item"
+                                        onClick={e => {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                            handleDownloadPDF();
+                                            setOpen(false);
+                                        }}
+                                    >
+                                        Download PDF
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                        {/* KeyBoard shortcuts */}
                         <button
                             type="button"
-                            className="bpmn-btn bpmn-btn-primary"
-                            onClick={handleSave}
-                            disabled={isSaving || isLoading}
+                            className="bpmn-btn bpmn-btn-secondary"
+                            onClick={() => setShowKeyboardShortcuts(true)}
+                            title="Keyboard Shortcuts"
+                            disabled={isLoading}
                         >
-                            {isSaving ? "Saving..." : "Save"}
+                            <img src={keyboardIcon} style={{ width: 18, height: 18 }} alt="Key Board" />
                         </button>
-                    )}
-                </div>
-            </div>
-            )}
+                        {/* In the toolbar center section, add this button: */}
+                        <button
+                            type="button"
+                            className={`bpmn-btn bpmn-btn-secondary bpmn-btn-bottleneck ${
+                                isBottleneckMode ? "active" : ""
+                            }`}
+                            onClick={handleBottleneckAnalysis}
+                            disabled={isLoading}
+                            title="Show tasks with high duration in red"
+                        >
+                            {isBottleneckMode ? "Hide Bottleneck" : "Show Bottleneck"}
+                        </button>
+                    </div>
 
+                    <div className="bpmn-toolbar-right">
+                        {/* Action buttons */}
+                        {onCancel && (
+                            <button
+                                type="button"
+                                className="bpmn-btn bpmn-btn-secondary"
+                                onClick={handleCancel}
+                                disabled={isSaving}
+                            >
+                                Cancel
+                            </button>
+                        )}
+                        {onSave && (
+                            <button
+                                type="button"
+                                className="bpmn-btn bpmn-btn-primary"
+                                onClick={handleSave}
+                                disabled={isSaving || isLoading}
+                            >
+                                {isSaving ? "Saving..." : "Save"}
+                            </button>
+                        )}
+                    </div>
+                </div>
+            )}
 
             {/* Error display */}
             {error && (
                 <div className="bpmn-error-banner">
                     <span className="bpmn-error-icon">⚠</span>
                     <span className="bpmn-error-text">{error}</span>
-                    <button
-                        type="button"
-                        className="bpmn-error-close"
-                        onClick={() => setError(null)}
-                    >
+                    <button type="button" className="bpmn-error-close" onClick={() => setError(null)}>
                         ×
                     </button>
                 </div>
             )}
-
 
             {/* Loading state */}
             {isLoading && (
@@ -714,112 +682,113 @@ export const BpmnEditor = ({
             )}
 
             {/* BPMN Workspace */}
+            {/* BPMN Workspace */}
             <div className="bpmn-workspace">
-
-            {/* BPMN Canvas */}
-            <div className="bpmn-canvas-wrapper">
-                <BpmnModelerComponent
-                initialXml={currentXml}
-                onError={handleError}
-                onModelerReady={handleModelerReady}
-                editorActionsRef={editorActionsRef}
-                onValidate={(errors, warnings) => {
-                    setValidationResults({ errors, warnings });
-                    modelerMethodsRef.current?.applyValidationMarkers(errors, warnings);
-                }}
-                isSimulationMode={isSimulationMode}
-                />
-            </div>
-
-            {/* Validation Panel (RIGHT SIDE) */}
-            {!isSimulationMode && (
-            <div
-                className={`bpmn-validation-panel ${
-                isValidationOpen ? "open" : "collapsed"
-                }`}
-            >
-                {/* Header */}
-                <div
-                className="validation-title"
-                onClick={() => setIsValidationOpen(prev => !prev)}
-                >
-                <h4>Validation</h4>
-                <img
-                    src={downIcon}
-                    alt="toggle validation"
-                    className={`validation-arrow ${
-                    isValidationOpen ? "rotated" : ""
-                    }`}
-                />
+                {/* BPMN Canvas */}
+                <div className="bpmn-canvas-wrapper">
+                    <BpmnModelerComponent
+                        initialXml={currentXml}
+                        onError={handleError}
+                        onModelerReady={handleModelerReady}
+                        editorActionsRef={editorActionsRef}
+                        onValidate={(errors, warnings) => {
+                            setValidationResults({ errors, warnings });
+                            modelerMethodsRef.current?.applyValidationMarkers(errors, warnings);
+                        }}
+                        isSimulationMode={isSimulationMode}
+                    />
                 </div>
 
-                {/* Content */}
-                {isValidationOpen && (
-                <div className="validation-content">
-                    {/* ERRORS */}
-                    {validationResults.errors.length > 0 && (
-                    <div className="validation-errors">
-                        <h5 className="error-title">Errors</h5>
-
-                        {validationResults.errors.map((e, i) => (
-                        <div
-                            key={`error-${i}`}
-                            className="validation-item error"
-                            onClick={() =>
-                            modelerMethodsRef.current?.focusElement(e.elementId)
-                            }
-                        >
-                            {e.message}
-                        </div>
-                        ))}
-                    </div>
-                    )}
-
-                    {/* WARNINGS */}
-                    {Object.keys(groupedWarnings).length > 0 && (
-                    <div className="validation-warnings">
-                        <h5 className="warning-title">Warnings</h5>
-
-                        {Object.entries(groupedWarnings).map(([ruleId, items]) => (
-                        <div key={ruleId} className="validation-group">
-                            <div className="validation-group-title">
-                            ⚠ {items.length} issue(s): {items[0].message}
+                {/* RIGHT SIDEBAR (VERTICAL STACK) */}
+                {!isSimulationMode && (
+                    <div className="bpmn-right-sidebar">
+                        {/* ===============================
+        PROPERTIES PANEL (TOP)
+       =============================== */}
+                        <div className={`bpmn-properties-panel ${isPropertiesOpen ? "open" : "collapsed"}`}>
+                            <div className="panel-header" onClick={() => setIsPropertiesOpen(p => !p)}>
+                                <h4>Properties</h4>
+                                <img
+                                    src={downIcon}
+                                    alt="toggle properties"
+                                    className={`panel-arrow ${isPropertiesOpen ? "rotated" : ""}`}
+                                />
                             </div>
 
-                            <div className="validation-group-items">
-                            {items.map((w, i) => (
-                                <div
-                                key={`${ruleId}-${i}`}
-                                className="validation-item warning"
-                                onClick={() =>
-                                    modelerMethodsRef.current?.focusElement(w.elementId)
-                                }
-                                >
-                                {w.elementId || "Global"}
+                            <div id="js-properties-panel" className="panel-content" />
+                        </div>
+
+                        {/* ===============================
+        VALIDATION PANEL (BOTTOM)
+       =============================== */}
+                        <div className={`bpmn-validation-panel ${isValidationOpen ? "open" : "collapsed"}`}>
+                            <div className="validation-title" onClick={() => setIsValidationOpen(v => !v)}>
+                                <h4>Validation</h4>
+                                <img
+                                    src={downIcon}
+                                    alt="toggle validation"
+                                    className={`validation-arrow ${isValidationOpen ? "rotated" : ""}`}
+                                />
+                            </div>
+
+                            {isValidationOpen && (
+                                <div className="validation-content">
+                                    {/* ERRORS */}
+                                    {validationResults.errors.length > 0 && (
+                                        <div className="validation-errors">
+                                            <h5 className="error-title">Errors</h5>
+
+                                            {validationResults.errors.map((e, i) => (
+                                                <div
+                                                    key={`error-${i}`}
+                                                    className="validation-item error"
+                                                    onClick={() => modelerMethodsRef.current?.focusElement(e.elementId)}
+                                                >
+                                                    {e.message}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+
+                                    {/* WARNINGS */}
+                                    {Object.keys(groupedWarnings).length > 0 && (
+                                        <div className="validation-warnings">
+                                            <h5 className="warning-title">Warnings</h5>
+
+                                            {Object.entries(groupedWarnings).map(([ruleId, items]) => (
+                                                <div key={ruleId} className="validation-group">
+                                                    <div className="validation-group-title">
+                                                        ⚠ {items.length} issue(s): {items[0].message}
+                                                    </div>
+
+                                                    <div className="validation-group-items">
+                                                        {items.map((w, i) => (
+                                                            <div
+                                                                key={`${ruleId}-${i}`}
+                                                                className="validation-item warning"
+                                                                onClick={() =>
+                                                                    modelerMethodsRef.current?.focusElement(w.elementId)
+                                                                }
+                                                            >
+                                                                {w.elementId || "Global"}
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
                                 </div>
-                            ))}
-                            </div>
+                            )}
                         </div>
-                        ))}
                     </div>
-                    )}
-                </div>
                 )}
-            </div>
-            )}
-
             </div>
 
             {/* Keyboard Shortcuts Modal */}
             {showKeyboardShortcuts && (
-                <div 
-                    className="keyboard-shortcuts-overlay"
-                    onClick={() => setShowKeyboardShortcuts(false)}
-                >
-                    <div 
-                        className="keyboard-shortcuts-modal"
-                        onClick={(e) => e.stopPropagation()}
-                    >
+                <div className="keyboard-shortcuts-overlay" onClick={() => setShowKeyboardShortcuts(false)}>
+                    <div className="keyboard-shortcuts-modal" onClick={e => e.stopPropagation()}>
                         <div className="keyboard-shortcuts-header">
                             <h3>Keyboard Shortcuts</h3>
                             <button
@@ -829,7 +798,7 @@ export const BpmnEditor = ({
                                 ×
                             </button>
                         </div>
-                        
+
                         <div className="keyboard-shortcuts-content">
                             <div className="shortcuts-section">
                                 <div className="shortcut-item">
@@ -857,7 +826,7 @@ export const BpmnEditor = ({
                                     </span>
                                 </div>
                                 <div className="shortcut-item">
-                                   <span className="shortcut-description">Undo</span>
+                                    <span className="shortcut-description">Undo</span>
                                     <span className="shortcut-keys">
                                         <kbd>Ctrl</kbd> + <kbd>Z</kbd>
                                     </span>
@@ -872,19 +841,19 @@ export const BpmnEditor = ({
                                     <span className="shortcut-description">Select All</span>
                                     <span className="shortcut-keys">
                                         <kbd>Ctrl</kbd> + <kbd>A</kbd>
-                                    </span>  
+                                    </span>
                                 </div>
                                 <div className="shortcut-item">
                                     <span className="shortcut-description">Scrolling (Vertical)</span>
                                     <span className="shortcut-keys">
                                         <kbd>Ctrl</kbd> + <kbd>Scrolling</kbd>
-                                    </span>  
+                                    </span>
                                 </div>
                                 <div className="shortcut-item">
                                     <span className="shortcut-description">Scrolling (Horizontal)</span>
                                     <span className="shortcut-keys">
                                         <kbd>Ctrl</kbd> + <kbd>⇧</kbd> + <kbd>Scrolling</kbd>
-                                    </span>  
+                                    </span>
                                 </div>
                                 <div className="shortcut-item">
                                     <span className="shortcut-description">Direct Editing</span>
