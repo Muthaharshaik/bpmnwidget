@@ -698,7 +698,6 @@ export const BpmnEditor = ({ initialXml, onSave, onCancel, bpmnFile, onTasksExtr
                         isSimulationMode={isSimulationMode}
                     />
                 </div>
-
                 {/* RIGHT SIDEBAR (VERTICAL STACK) */}
                 {!isSimulationMode && (
                     <div className="bpmn-right-sidebar">
