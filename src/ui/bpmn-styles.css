@@ -283,7 +283,6 @@
     font-size: 13px;
     overflow: hidden;
     transition: width 0.25s ease;
-    display: none;
 }
 
 .bpmn-validation-panel.collapsed {
