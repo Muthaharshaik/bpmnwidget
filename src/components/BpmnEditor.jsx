@@ -37,9 +37,8 @@ export const BpmnEditor = ({ initialXml, onSave, onCancel, bpmnFile, onTasksExtr
     const [showKeyboardShortcuts, setShowKeyboardShortcuts] = useState(false);
     const [isSimulationMode, setIsSimulationMode] = useState(false);
     const [validationResults, setValidationResults] = useState({ errors: [], warnings: [] });
-    const [isValidationOpen, setIsValidationOpen] = useState(false);
     const [isBottleneckMode, setIsBottleneckMode] = useState(false);
-    const [isPropertiesOpen, setIsPropertiesOpen] = useState(true);
+    const [expandedPanel, setExpandedPanel] = useState(null);
 
     // Refs
     const fileInputRef = useRef(null);
@@ -236,6 +235,14 @@ export const BpmnEditor = ({ initialXml, onSave, onCancel, bpmnFile, onTasksExtr
      */
     const handleZoomFit = () => {
         modelerMethodsRef.current?.fitAndCenter?.();
+    };
+
+    const handlePropertiesClick = () => {
+        setExpandedPanel(prev => (prev === "properties" ? null : "properties"));
+    };
+
+    const handleValidationClick = () => {
+        setExpandedPanel(prev => (prev === "validation" ? null : "validation"));
     };
 
     /**
@@ -682,7 +689,6 @@ export const BpmnEditor = ({ initialXml, onSave, onCancel, bpmnFile, onTasksExtr
             )}
 
             {/* BPMN Workspace */}
-            {/* BPMN Workspace */}
             <div className="bpmn-workspace">
                 {/* BPMN Canvas */}
                 <div className="bpmn-canvas-wrapper">
@@ -698,87 +704,90 @@ export const BpmnEditor = ({ initialXml, onSave, onCancel, bpmnFile, onTasksExtr
                         isSimulationMode={isSimulationMode}
                     />
                 </div>
-                {/* RIGHT SIDEBAR (VERTICAL STACK) */}
+
+                {/* RIGHT SIDEBAR */}
                 {!isSimulationMode && (
                     <div className="bpmn-right-sidebar">
-                        {/* ===============================
-        PROPERTIES PANEL (TOP)
-       =============================== */}
-                        <div className={`bpmn-properties-panel ${isPropertiesOpen ? "open" : "collapsed"}`}>
-                            <div className="panel-header" onClick={() => setIsPropertiesOpen(p => !p)}>
-                                <h4>Properties</h4>
-                                <img
-                                    src={downIcon}
-                                    alt="toggle properties"
-                                    className={`panel-arrow ${isPropertiesOpen ? "rotated" : ""}`}
-                                />
-                            </div>
+                        {/* ---------- PROPERTIES HEADER ---------- */}
+                        <div className="panel-header" onClick={handlePropertiesClick}>
+                            <h4>Properties</h4>
+                            <img
+                                src={downIcon}
+                                className={`panel-arrow ${expandedPanel === "properties" ? "rotated" : ""}`}
+                                alt="toggle properties"
+                            />
+                        </div>
 
+                        {/* ---------- PROPERTIES CONTENT ---------- */}
+                        <div
+                            className={`bpmn-properties-content ${
+                                expandedPanel === "properties" ? "expanded" : "collapsed"
+                            }`}
+                        >
+                            {/* ⚠️ MUST NEVER BE REMOVED */}
                             <div id="js-properties-panel" className="panel-content" />
                         </div>
 
-                        {/* ===============================
-        VALIDATION PANEL (BOTTOM)
-       =============================== */}
-                        <div className={`bpmn-validation-panel ${isValidationOpen ? "open" : "collapsed"}`}>
-                            <div className="validation-title" onClick={() => setIsValidationOpen(v => !v)}>
-                                <h4>Validation</h4>
-                                <img
-                                    src={downIcon}
-                                    alt="toggle validation"
-                                    className={`validation-arrow ${isValidationOpen ? "rotated" : ""}`}
-                                />
+                        {/* ---------- VALIDATION HEADER ---------- */}
+                        <div className="validation-title" onClick={handleValidationClick}>
+                            <h4>Validation</h4>
+                            <img
+                                src={downIcon}
+                                className={`validation-arrow ${expandedPanel === "validation" ? "rotated" : ""}`}
+                                alt="toggle validation"
+                            />
+                        </div>
+
+                        {/* ---------- VALIDATION CONTENT ---------- */}
+                        <div
+                            className={`bpmn-validation-content ${
+                                expandedPanel === "validation" ? "expanded" : "collapsed"
+                            }`}
+                        >
+                            <div className="validation-content">
+                                {/* ERRORS */}
+                                {validationResults.errors.length > 0 && (
+                                    <div className="validation-errors">
+                                        <h5 className="error-title">Errors</h5>
+                                        {validationResults.errors.map((e, i) => (
+                                            <div
+                                                key={`error-${i}`}
+                                                className="validation-item error"
+                                                onClick={() => modelerMethodsRef.current?.focusElement(e.elementId)}
+                                            >
+                                                {e.message}
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+
+                                {/* WARNINGS */}
+                                {Object.keys(groupedWarnings).length > 0 && (
+                                    <div className="validation-warnings">
+                                        <h5 className="warning-title">Warnings</h5>
+                                        {Object.entries(groupedWarnings).map(([ruleId, items]) => (
+                                            <div key={ruleId} className="validation-group">
+                                                <div className="validation-group-title">
+                                                    ⚠ {items.length} issue(s): {items[0].message}
+                                                </div>
+                                                <div className="validation-group-items">
+                                                    {items.map((w, i) => (
+                                                        <div
+                                                            key={`${ruleId}-${i}`}
+                                                            className="validation-item warning"
+                                                            onClick={() =>
+                                                                modelerMethodsRef.current?.focusElement(w.elementId)
+                                                            }
+                                                        >
+                                                            {w.elementId || "Global"}
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
-
-                            {isValidationOpen && (
-                                <div className="validation-content">
-                                    {/* ERRORS */}
-                                    {validationResults.errors.length > 0 && (
-                                        <div className="validation-errors">
-                                            <h5 className="error-title">Errors</h5>
-
-                                            {validationResults.errors.map((e, i) => (
-                                                <div
-                                                    key={`error-${i}`}
-                                                    className="validation-item error"
-                                                    onClick={() => modelerMethodsRef.current?.focusElement(e.elementId)}
-                                                >
-                                                    {e.message}
-                                                </div>
-                                            ))}
-                                        </div>
-                                    )}
-
-                                    {/* WARNINGS */}
-                                    {Object.keys(groupedWarnings).length > 0 && (
-                                        <div className="validation-warnings">
-                                            <h5 className="warning-title">Warnings</h5>
-
-                                            {Object.entries(groupedWarnings).map(([ruleId, items]) => (
-                                                <div key={ruleId} className="validation-group">
-                                                    <div className="validation-group-title">
-                                                        ⚠ {items.length} issue(s): {items[0].message}
-                                                    </div>
-
-                                                    <div className="validation-group-items">
-                                                        {items.map((w, i) => (
-                                                            <div
-                                                                key={`${ruleId}-${i}`}
-                                                                className="validation-item warning"
-                                                                onClick={() =>
-                                                                    modelerMethodsRef.current?.focusElement(w.elementId)
-                                                                }
-                                                            >
-                                                                {w.elementId || "Global"}
-                                                            </div>
-                                                        ))}
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    )}
-                                </div>
-                            )}
                         </div>
                     </div>
                 )}
