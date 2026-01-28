@@ -176,10 +176,10 @@
     border-color: #d0d0d0;
 }
 
-.bpmn-btn-secondary:hover:not(:disabled) {
+/* .bpmn-btn-secondary:hover:not(:disabled) {
     background-color: #f5f5f5;
     border-color: #b0b0b0;
-}
+} */
 
 .bpmn-btn-secondary:active:not(:disabled) {
     background-color: #e8e8e8;

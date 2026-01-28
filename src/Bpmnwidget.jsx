@@ -5,10 +5,10 @@ import "./ui/bpmn-styles.css";
 
 /**
  * Bpmnwidget - Main Widget Component
- * 
+ *
  * This is the entry point for the Mendix widget.
  * It connects Mendix properties to the React BpmnEditor component.
- * 
+ *
  * Mendix Props:
  * - bpmnXML: EditableValue<string> - The BPMN XML attribute from entity
  * - onSaveAction: ActionValue - Mendix action to execute on save
@@ -48,31 +48,34 @@ export function Bpmnwidget(props) {
     /**
      * Handle Save
      * Called when user clicks Save button in BpmnEditor
-     * 
+     *
      * Flow:
      * 1. Receive XML string from BpmnEditor
      * 2. Update Mendix attribute with new XML
      * 3. Execute Mendix onSaveAction
      */
-    const handleSave = useCallback((xml, previewImage) => {
-        // Update the Mendix attribute with new XML
-        if (bpmnXML && bpmnXML.status === "available") {
-            bpmnXML.setValue(xml);
-        }
+    const handleSave = useCallback(
+        (xml, previewImage) => {
+            // Update the Mendix attribute with new XML
+            if (bpmnXML && bpmnXML.status === "available") {
+                bpmnXML.setValue(xml);
+            }
 
-        if (previewImageAttr && previewImageAttr.status === "available") {
-            previewImageAttr.setValue(previewImage);
-        }
-        // Execute the Mendix action (microflow/nanoflow)
-        if (onSaveAction && onSaveAction.canExecute) {
-            onSaveAction.execute();
-        }
-    }, [bpmnXML, previewImageAttr, onSaveAction]);
+            if (previewImageAttr && previewImageAttr.status === "available") {
+                previewImageAttr.setValue(previewImage);
+            }
+            // Execute the Mendix action (microflow/nanoflow)
+            if (onSaveAction && onSaveAction.canExecute) {
+                onSaveAction.execute();
+            }
+        },
+        [bpmnXML, previewImageAttr, onSaveAction]
+    );
 
     /**
      * Handle Cancel
      * Called when user clicks Cancel button in BpmnEditor
-     * 
+     *
      * Flow:
      * 1. Execute Mendix onCancelAction
      * 2. Usually closes the popup/page
@@ -84,11 +87,14 @@ export function Bpmnwidget(props) {
         }
     }, [onCancelAction]);
 
-    const handleTasksExtracted = useCallback((tasks) => {
-        if (taskDataJson && taskDataJson.status === "available") {
-            taskDataJson.setValue(JSON.stringify(tasks));
-        }
-    }, [taskDataJson]);
+    const handleTasksExtracted = useCallback(
+        tasks => {
+            if (taskDataJson && taskDataJson.status === "available") {
+                taskDataJson.setValue(JSON.stringify(tasks));
+            }
+        },
+        [taskDataJson]
+    );
 
     /**
      * Loading state check
@@ -110,7 +116,7 @@ export function Bpmnwidget(props) {
      * Show error if Mendix attribute is unavailable
      */
     if (bpmnXML && bpmnXML.status === "unavailable") {
-         return null;
+        return null;
     }
 
     /**
@@ -118,11 +124,7 @@ export function Bpmnwidget(props) {
      * Render the BpmnEditor component with props
      */
     return (
-        <div 
-            className={`bpmn-widget ${className || ""}`} 
-            style={style}
-            tabIndex={tabIndex}
-        >
+        <div className={`bpmn-widget ${className || ""}`} style={style} tabIndex={tabIndex}>
             <BpmnEditor
                 initialXml={currentXml}
                 onSave={handleSave}
@@ -142,28 +144,31 @@ export function Bpmnwidget(props) {
 export function preview(props) {
     return (
         <div className="bpmn-widget-preview">
-            <div style={{
-                border: "1px solid #ccc",
-                borderRadius: "4px",
-                padding: "20px",
-                textAlign: "center",
-                backgroundColor: "#f5f5f5",
-                minHeight: props.height || "400px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                flexDirection: "column"
-            }}>
-                <div style={{
-                    fontSize: "48px",
-                    marginBottom: "16px",
-                    opacity: 0.5
-                }}>
+            <div
+                style={{
+                    border: "1px solid #ccc",
+                    borderRadius: "4px",
+                    padding: "20px",
+                    textAlign: "center",
+                    backgroundColor: "#f5f5f5",
+                    minHeight: props.height || "400px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    flexDirection: "column"
+                }}
+            >
+                <div
+                    style={{
+                        fontSize: "48px",
+                        marginBottom: "16px",
+                        opacity: 0.5
+                    }}
+                >
                     📊
                 </div>
                 <h3 style={{ margin: 0, color: "#666" }}>BPMN Widget</h3>
-                <p style={{ margin: "8px 0 0 0", color: "#999", fontSize: "14px" }}>
-                </p>
+                <p style={{ margin: "8px 0 0 0", color: "#999", fontSize: "14px" }}></p>
             </div>
         </div>
     );

@@ -1,4 +1,4 @@
-import { createElement, useState, useRef, useEffect } from "react";
+import { createElement, useState, useRef, useEffect, useCallback } from "react";
 import BpmnModelerComponent from "./BpmnModeler";
 import folderIcon from "../assets/folder-closed.svg";
 import plusIcon from "../assets/zoom-in.svg";
@@ -7,6 +7,8 @@ import resetIcon from "../assets/move-diagonal.svg";
 import downloadIcon from "../assets/download.svg";
 import keyboardIcon from "../assets/keyboard.svg";
 import downIcon from "../assets/chevron-down.svg";
+import companyLogo from "../assets/LCL-brand-clr-logo.png";
+import watermarkImg from "../assets/LCL-brand-clr-icon.png";
 import jsPDF from "jspdf";
 import { applyBottleneckColors, clearBottleneckColors } from "../utils/bottleneckAnalyzer";
 
@@ -46,6 +48,8 @@ export const BpmnEditor = ({ initialXml, onSave, onCancel, bpmnFile, onTasksExtr
     const lastLoadedXmlRef = useRef(initialXml);
     const editorActionsRef = useRef(null);
     const lastAppliedTaskJsonRef = useRef(null);
+    const logoImgRef = useRef(null);
+    const watermarkImgRef = useRef(null);
 
     /**
      * Only reload diagram if we're opening a genuinely different diagram
@@ -130,6 +134,17 @@ export const BpmnEditor = ({ initialXml, onSave, onCancel, bpmnFile, onTasksExtr
         }
     }, [isSimulationMode]);
 
+    useEffect(() => {
+        const img = new Image();
+        img.src = companyLogo;
+        logoImgRef.current = img;
+    }, []);
+
+    useEffect(() => {
+        const img = new Image();
+        img.src = watermarkImg;
+        watermarkImgRef.current = img;
+    }, []);
     /**
      * Handle errors from the modeler
      */
@@ -341,6 +356,28 @@ export const BpmnEditor = ({ initialXml, onSave, onCancel, bpmnFile, onTasksExtr
         }
     };
 
+    function addImageWatermark(pdf, watermarkImg) {
+        const pageWidth = pdf.internal.pageSize.getWidth();
+        const pageHeight = pdf.internal.pageSize.getHeight();
+
+        // Desired watermark width (in mm)
+        const watermarkWidth = 120;
+
+        // Preserve aspect ratio
+        const aspectRatio = watermarkImg.naturalHeight / watermarkImg.naturalWidth;
+        const watermarkHeight = watermarkWidth * aspectRatio;
+
+        const x = (pageWidth - watermarkWidth) / 2;
+        const y = (pageHeight - watermarkHeight) / 2;
+
+        pdf.saveGraphicsState();
+        pdf.setGState(new pdf.GState({ opacity: 0.05 }));
+
+        pdf.addImage(watermarkImg, "PNG", x, y, watermarkWidth, watermarkHeight);
+
+        pdf.restoreGraphicsState();
+    }
+
     /**
      * Handle Download as PDF
      * Converts SVG to PDF using jsPDF
@@ -412,9 +449,31 @@ export const BpmnEditor = ({ initialXml, onSave, onCancel, bpmnFile, onTasksExtr
 
                     // Get image data as PNG
                     const imgData = canvas.toDataURL("image/png");
+                    // Add company logo
+                    if (logoImgRef.current) {
+                        const logoWidth = 30; // mm
+                        const logoHeight = 10; // mm
+                        const logoX = 10; // left margin
+                        const logoY = 10; // top margin
+
+                        pdf.addImage(logoImgRef.current, "PNG", logoX, logoY, logoWidth, logoHeight);
+                    }
+
+                    // Title
+                    pdf.setFontSize(14);
+                    pdf.setFont("helvetica", "bold");
+                    pdf.text(sanitizeFilename(bpmnFile), pdf.internal.pageSize.getWidth() / 2, 18, { align: "center" });
+
+                    // Divider line
+                    pdf.setDrawColor(200);
+                    pdf.line(10, 25, pdf.internal.pageSize.getWidth() - 10, 25);
 
                     // Add image to PDF
                     pdf.addImage(imgData, "PNG", x, y, finalWidth, finalHeight);
+                    // ---- WATERMARK (every page) ----
+                    if (watermarkImgRef.current) {
+                        addImageWatermark(pdf, watermarkImgRef.current);
+                    }
 
                     // Save the PDF
                     pdf.save(`${sanitizeFilename(bpmnFile)}.pdf`);
@@ -637,7 +696,7 @@ export const BpmnEditor = ({ initialXml, onSave, onCancel, bpmnFile, onTasksExtr
                             }`}
                             onClick={handleBottleneckAnalysis}
                             disabled={isLoading}
-                            title="Show tasks with high duration in red"
+                            title="Show task with high execution time"
                         >
                             {isBottleneckMode ? "Hide Bottleneck" : "Show Bottleneck"}
                         </button>
