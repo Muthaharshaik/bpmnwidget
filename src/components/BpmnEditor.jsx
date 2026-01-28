@@ -710,7 +710,7 @@ export const BpmnEditor = ({ initialXml, onSave, onCancel, bpmnFile, onTasksExtr
                     <div className="bpmn-right-sidebar">
                         {/* ---------- PROPERTIES HEADER ---------- */}
                         <div className="panel-header" onClick={handlePropertiesClick}>
-                            <h4>Properties</h4>
+                            <h4>Properties Panel</h4>
                             <img
                                 src={downIcon}
                                 className={`panel-arrow ${expandedPanel === "properties" ? "rotated" : ""}`}
