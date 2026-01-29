@@ -145,6 +145,7 @@ export const BpmnEditor = ({ initialXml, onSave, onCancel, bpmnFile, onTasksExtr
         img.src = watermarkImg;
         watermarkImgRef.current = img;
     }, []);
+    
     /**
      * Handle errors from the modeler
      */

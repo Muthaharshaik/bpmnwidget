@@ -9,7 +9,8 @@ import { extractTasks } from "../utils/taskExtractor";
 import { updateTasks } from "../utils/taskUpdater";
 import { customModdle } from "../utils/customModdle";
 import { BpmnPropertiesPanelModule, BpmnPropertiesProviderModule } from "bpmn-js-properties-panel";
-import CustomModules from "../custom";
+// import CustomModules from "../custom";
+
 
 /**
  * BpmnModeler Component
@@ -115,8 +116,7 @@ export const BpmnModelerComponent = ({
                 ColorPickerModule,
                 TokenSimulationModeler,
                 BpmnPropertiesPanelModule,
-                BpmnPropertiesProviderModule,
-                CustomModules
+                BpmnPropertiesProviderModule
             ],
             moddleExtensions: {
                 custom: customModdle
