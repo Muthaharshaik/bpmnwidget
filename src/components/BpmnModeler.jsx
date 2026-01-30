@@ -1,6 +1,5 @@
 import { useEffect, useRef, useCallback, createElement } from "react";
 import BpmnModeler from "bpmn-js/lib/Modeler";
-import BpmnViewer from 'bpmn-js/lib/NavigatedViewer';
 import { CreateAppendAnythingModule } from "bpmn-js-create-append-anything";
 import ColorPickerModule from "bpmn-js-color-picker";
 import { validateDiagram as runValidation } from "../validations";
@@ -103,6 +102,39 @@ export const BpmnModelerComponent = ({
         });
     }, []);
 
+    //   /* =====================================================
+    //  🔥 DELETE BUTTON LOGIC (CORRECT PLACE)
+    //  ===================================================== */
+    // const injectDeleteButtons = useCallback((elementId) => {
+    //     if (!modelerRef.current || !elementId) return;
+
+    //     const embeddedComments = modelerRef.current.get("embeddedComments");
+    //     if (!embeddedComments) return;
+
+    //     // Wait until DOM is rendered
+    //     setTimeout(() => {
+    //     const commentEls = document.querySelectorAll(
+    //         ".djs-overlay-comments .comment"
+    //     );
+
+    //     commentEls.forEach((commentEl, index) => {
+    //         if (commentEl.querySelector(".comment-delete-btn")) return;
+
+    //         const btn = document.createElement("button");
+    //         btn.className = "comment-delete-btn";
+    //         btn.innerHTML = "🗑";
+
+    //         btn.onclick = (e) => {
+    //         e.stopPropagation();
+    //         embeddedComments.remove(elementId, index);
+    //         };
+
+    //         commentEl.style.position = "relative";
+    //         commentEl.appendChild(btn);
+    //     });
+    //     }, 0);
+    // }, []);
+
     /**
      * Initialize the BPMN Modeler (runs once on mount)
      */
@@ -127,6 +159,7 @@ export const BpmnModelerComponent = ({
             },
             // ✅ Add this configuration
            embeddedComments: {
+            editable: true,
             // Enable overlay mode
             overlayConfig: {
                 show: {
@@ -185,6 +218,27 @@ export const BpmnModelerComponent = ({
             }
         };
     }, []); // Empty deps = runs once
+
+    
+    // /* =====================================================
+    //     🔥 LISTEN FOR COMMENT CHANGES
+    //     ===================================================== */
+    // useEffect(() => {
+    //     if (!modelerRef.current) return;
+
+    //     const eventBus = modelerRef.current.get("eventBus");
+
+    //     const handler = ({ elementId }) => {
+    //     injectDeleteButtons(elementId);
+    //     };
+
+    //     eventBus.on("comments.updated", handler);
+
+    //     return () => {
+    //     eventBus.off("comments.updated", handler);
+    //     };
+    // }, [injectDeleteButtons]);
+
 
     useEffect(() => {
         if (!modelerRef.current) return;
