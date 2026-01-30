@@ -41,6 +41,8 @@ export const BpmnEditor = ({ initialXml, onSave, onCancel, bpmnFile, onTasksExtr
     const [validationResults, setValidationResults] = useState({ errors: [], warnings: [] });
     const [isBottleneckMode, setIsBottleneckMode] = useState(false);
     const [expandedPanel, setExpandedPanel] = useState(null);
+    const [isTaskDataApplied, setIsTaskDataApplied] = useState(false);
+
 
     // Refs
     const fileInputRef = useRef(null);
@@ -89,6 +91,7 @@ export const BpmnEditor = ({ initialXml, onSave, onCancel, bpmnFile, onTasksExtr
     const handleModelerReady = async methods => {
         modelerMethodsRef.current = methods;
         setIsLoading(false);
+        setIsTaskDataApplied(false);
 
         const modeler = methods.getModeler();
         const eventBus = modeler.get("eventBus");
@@ -107,11 +110,6 @@ export const BpmnEditor = ({ initialXml, onSave, onCancel, bpmnFile, onTasksExtr
             setValidationResults({ errors, warnings });
             methods.applyValidationMarkers(errors, warnings);
 
-            // ✅ SAFE POINT: XML fully ready
-            if (onTasksExtracted && methods.extractTasks) {
-                const tasks = methods.extractTasks();
-                onTasksExtracted(tasks);
-            }
 
             // Optional: show blocking message immediately
             if (errors.length > 0) {
@@ -198,23 +196,20 @@ export const BpmnEditor = ({ initialXml, onSave, onCancel, bpmnFile, onTasksExtr
             setIsSaving(false);
         }
     };
+useEffect(() => {
+    if (!modelerMethodsRef.current) return;
+    if (!taskDataJson) return;
 
-    useEffect(() => {
-        if (!modelerMethodsRef.current) return;
-        if (!taskDataJson) return;
-        if (taskDataJson === lastAppliedTaskJsonRef.current) return;
+    try {
+        const tasks = JSON.parse(taskDataJson);
+        modelerMethodsRef.current.updateTasks(tasks);
+        setIsTaskDataApplied(true); // ✅ NOW GUARANTEED
+    } catch (e) {
+        console.error("Invalid task master data JSON", e);
+    }
+}, [taskDataJson, modelerMethodsRef.current]);
 
-        try {
-            const tasks = JSON.parse(taskDataJson);
-            if (modelerMethodsRef.current?.updateTasks) {
-                modelerMethodsRef.current.updateTasks(tasks);
-            }
 
-            lastAppliedTaskJsonRef.current = taskDataJson;
-        } catch (e) {
-            console.error("Invalid task master data JSON", e);
-        }
-    }, [taskDataJson]);
 
     /**
      * Handle Cancel button click
@@ -275,25 +270,33 @@ export const BpmnEditor = ({ initialXml, onSave, onCancel, bpmnFile, onTasksExtr
      * Function to handle bottleneck analysis
      */
     const handleBottleneckAnalysis = () => {
-        if (!modelerMethodsRef.current?.extractTasks || !modelerMethodsRef.current?.getModeler) {
+        if (!isTaskDataApplied) {
+            alert("Task data is still loading. Please wait a moment.");
             return;
         }
+
+        if (!modelerMethodsRef.current?.extractTasks) return;
+
         const modeler = modelerMethodsRef.current.getModeler();
+
         if (isBottleneckMode) {
-            //turnoff the bottleneck mode
             clearBottleneckColors(modeler);
             setIsBottleneckMode(false);
-        } else {
-            const tasks = modelerMethodsRef.current.extractTasks();
-            const tasksWithDuration = tasks.filter(t => t.duration && t.duration.trim() !== "");
-            if (tasksWithDuration.length === 0) {
-                alert("No tasks with duration found, please add duration to the tasks first");
-                return;
-            }
-            applyBottleneckColors(modeler, tasks);
-            setIsBottleneckMode(true);
+            return;
         }
+
+        const tasks = modelerMethodsRef.current.extractTasks();
+        const tasksWithDuration = tasks.filter(t => t.duration?.trim());
+
+        if (!tasksWithDuration.length) {
+            alert("No tasks with duration found.");
+            return;
+        }
+
+        applyBottleneckColors(modeler, tasks);
+        setIsBottleneckMode(true);
     };
+
 
     /**
      * Function to focus on task when it is clicked.

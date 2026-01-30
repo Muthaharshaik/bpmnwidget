@@ -1,5 +1,6 @@
 import { useEffect, useRef, useCallback, createElement } from "react";
 import BpmnModeler from "bpmn-js/lib/Modeler";
+import BpmnViewer from 'bpmn-js/lib/NavigatedViewer';
 import { CreateAppendAnythingModule } from "bpmn-js-create-append-anything";
 import ColorPickerModule from "bpmn-js-color-picker";
 import { validateDiagram as runValidation } from "../validations";
@@ -10,6 +11,8 @@ import { updateTasks } from "../utils/taskUpdater";
 import { customModdle } from "../utils/customModdle";
 import { BpmnPropertiesPanelModule, BpmnPropertiesProviderModule } from "bpmn-js-properties-panel";
 // import CustomModules from "../custom";
+import EmbeddedComments from 'bpmn-js-embedded-comments';
+
 
 
 /**
@@ -116,11 +119,21 @@ export const BpmnModelerComponent = ({
                 ColorPickerModule,
                 TokenSimulationModeler,
                 BpmnPropertiesPanelModule,
-                BpmnPropertiesProviderModule
+                BpmnPropertiesProviderModule,
+                EmbeddedComments
             ],
             moddleExtensions: {
                 custom: customModdle
+            },
+            // ✅ Add this configuration
+           embeddedComments: {
+            // Enable overlay mode
+            overlayConfig: {
+                show: {
+                    minZoom: 0.5
+                }
             }
+        }
         });
 
         modelerRef.current = modeler;

@@ -22,7 +22,7 @@
 @import "bpmn-js-color-picker/colors/color-picker.css";
 @import "bpmn-js-token-simulation/assets/css/bpmn-js-token-simulation.css";
 @import "@bpmn-io/properties-panel/dist/assets/properties-panel.css";
-
+@import "bpmn-js-embedded-comments/assets/comments.css";
 /* ===================================
    Editor Container
    =================================== */
@@ -1415,4 +1415,296 @@
 .validation-content {
     height: 100%;
     overflow: auto;
+}
+
+/* =====================================================
+   BPMN EMBEDDED COMMENTS – FINAL POLISHED UI
+   Library-safe | CSS-only | Production-ready
+   ===================================================== */
+
+/* -----------------------------
+   Overlay root
+------------------------------ */
+.djs-overlay.djs-overlay-comments {
+  z-index: 100 !important;
+  background: transparent !important;
+  pointer-events: auto;
+}
+
+/* -----------------------------
+   Overlay wrapper
+------------------------------ */
+.comments-overlay {
+  position: relative;
+  pointer-events: auto;
+  background: none !important;
+}
+
+/* -----------------------------
+   Toggle (icon container)
+------------------------------ */
+.toggle {
+  position: relative;
+  width: 28px;
+  height: 28px;
+  cursor: pointer;
+  z-index: 101;
+}
+
+/* -----------------------------
+   Chat icon (THIS is the logo)
+------------------------------ */
+.toggle .icon-comment {
+  width: 24px;
+  height: 24px;
+  display: block;
+
+  background-color: #ffffff;           /* white center */
+  border: 2px solid #000000;           /* black border */
+  border-radius: 5px;
+
+  background-image: url("data:image/svg+xml;utf8,\
+  <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'>\
+    <path d='M3 4h18v12H7l-4 4V4z'/>\
+  </svg>");
+
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 14px 14px;
+
+  box-shadow: none;
+}
+
+
+.toggle:hover .icon-comment {
+  transform: scale(1.1);
+  box-shadow: 0 3px 10px rgba(0,0,0,0.35);
+}
+
+/* -----------------------------
+   Comment count badge
+------------------------------ */
+.comment-count {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+
+  background: #ffffff;
+  color: black;
+  font-size: 11px;
+  font-weight: 700;
+
+  border-radius: 10px;
+  line-height: 16px;
+  text-align: center;
+
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+  pointer-events: none;
+}
+
+/* -----------------------------
+   Popup panel
+------------------------------ */
+.content {
+  position: absolute;
+  top: 34px;
+  left: 50%;
+  transform: translateX(-50%);
+
+  min-width: 320px;
+  max-width: 420px;
+
+  background: #ffffff;
+  border-radius: 10px;
+  border: 1px solid #e0e0e0;
+
+  box-shadow: 0 12px 32px rgba(0,0,0,0.2);
+  z-index: 102;
+
+  overflow: hidden;
+  animation: commentPopIn 0.18s ease-out;
+}
+
+/* Bubble arrow */
+.content::before {
+  content: '';
+  position: absolute;
+  top: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+  border-bottom: 8px solid #ffffff;
+}
+
+/* -----------------------------
+   Comments list
+------------------------------ */
+.comments {
+  max-height: 320px;
+  overflow-y: auto;
+  padding: 12px;
+}
+
+/* Individual comment bubble */
+.comment-item {
+  background: #22c55e;
+  color: #ffffff;
+  border-radius: 8px;
+
+  padding: 10px 12px;
+  margin-bottom: 10px;
+
+  font-size: 14px;
+  line-height: 1.45;
+
+  box-shadow: 0 2px 4px rgba(0,0,0,0.12);
+  word-break: break-word;
+}
+
+/* Metadata row */
+.comment-meta {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 6px;
+
+  font-size: 11px;
+  opacity: 0.9;
+}
+
+.comment-author {
+  font-weight: 600;
+}
+
+.comment-date {
+  font-style: italic;
+}
+
+/* -----------------------------
+   Editor section
+------------------------------ */
+.edit {
+  padding: 12px;
+  border-top: 1px solid #e5e7eb;
+  background: #f9fafb;
+}
+
+.edit textarea {
+  width: 100%;
+  min-height: 80px;
+
+  padding: 10px;
+  border-radius: 6px;
+  border: 1px solid #d1d5db;
+
+  font-size: 14px;
+  line-height: 1.5;
+  resize: vertical;
+
+  outline: none;
+  box-sizing: border-box;
+}
+
+.edit textarea:focus {
+  border-color: #22c55e;
+  box-shadow: 0 0 0 3px rgba(34,197,94,0.15);
+}
+
+/* Buttons row */
+.edit > div {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+/* Buttons */
+.edit button {
+  padding: 8px 14px;
+  border-radius: 6px;
+  border: none;
+
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+/* Primary */
+.edit button[type="submit"],
+.edit button:first-child {
+  background: #22c55e;
+  color: #ffffff;
+  box-shadow: 0 2px 4px rgba(34,197,94,0.35);
+}
+
+.edit button[type="submit"]:hover {
+  background: #16a34a;
+}
+
+/* Secondary */
+.edit button[type="button"],
+.edit button:last-child {
+  background: #ffffff;
+  color: #374151;
+  border: 1px solid #d1d5db;
+}
+
+.edit button[type="button"]:hover {
+  background: #f3f4f6;
+}
+
+/* -----------------------------
+   Scrollbar polish
+------------------------------ */
+.comments::-webkit-scrollbar {
+  width: 8px;
+}
+
+.comments::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+.comments::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* -----------------------------
+   Empty state
+------------------------------ */
+.comments-empty {
+  padding: 20px;
+  text-align: center;
+  font-size: 13px;
+  color: #9ca3af;
+}
+
+/* -----------------------------
+   Animation
+------------------------------ */
+@keyframes commentPopIn {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+/* -----------------------------
+   Mobile adjustments
+------------------------------ */
+@media (max-width: 768px) {
+  .content {
+    min-width: 280px;
+    max-width: 90vw;
+  }
 }
