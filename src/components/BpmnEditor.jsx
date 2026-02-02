@@ -914,7 +914,7 @@ useEffect(() => {
                                 <div className="shortcut-item">
                                     <span className="shortcut-description">Download SVG</span>
                                     <span className="shortcut-keys">
-                                        <kbd>Ctrl</kbd> + <kbd>V</kbd>
+                                        <kbd>Ctrl</kbd> + <kbd>I</kbd>
                                     </span>
                                 </div>
                                 <div className="shortcut-item">

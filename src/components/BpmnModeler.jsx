@@ -234,23 +234,28 @@ export const BpmnModelerComponent = ({
         };
     }, []);
 
+
     /**
      * Setup keyboard shortcuts AFTER modeler is initialized
      */
     useEffect(() => {
         if (!modelerRef.current) return;
 
+        let keyboard;
+
         try {
-            const keyboard = modelerRef.current.get("keyboard");
+            keyboard = modelerRef.current.get("keyboard");
+            if (!keyboard) return;
 
             console.info("Keyboard module active");
 
-            // Add custom keyboard shortcuts if needed
-            keyboard.addListener(({ keyEvent, target }) => {
-                //Ignore typing in inputs / text areas
+            const handler = ({ keyEvent, target }) => {
+                // Ignore typing in inputs / text areas
                 if (
                     target &&
-                    (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable)
+                    (target.tagName === "INPUT" ||
+                    target.tagName === "TEXTAREA" ||
+                    target.isContentEditable)
                 ) {
                     return false;
                 }
@@ -259,38 +264,43 @@ export const BpmnModelerComponent = ({
                 if (!isCmdOrCtrl) return false;
 
                 const key = keyEvent.key.toLowerCase();
-
-                // IMPORTANT: get actions from editor
                 const actions = editorActionsRef?.current;
                 if (!actions) return false;
 
-                // Download BPMN
-                if (isCmdOrCtrl && key === "s") {
+                // Ctrl + S → Download BPMN
+                if (key === "s") {
                     keyEvent.preventDefault();
                     actions.downloadBPMN?.();
                     return true;
                 }
 
-                // Download PDF
-                if (isCmdOrCtrl && key === "d") {
+                // Ctrl + D → Download PDF
+                if (key === "d") {
                     keyEvent.preventDefault();
                     actions.downloadPDF?.();
                     return true;
                 }
 
-                // Download SVG
-                if (isCmdOrCtrl && key === "i") {
+                // Ctrl + I → Download SVG
+                if (key === "i") {
                     keyEvent.preventDefault();
                     actions.downloadSVG?.();
                     return true;
                 }
 
-                return false; // let BPMN handle everything else
-            });
+                return false;
+            };
+
+            keyboard.addListener(handler);
+
+            return () => {
+                keyboard.removeListener(handler); // 🔥 IMPORTANT
+            };
         } catch (error) {
-            console.error(" Keyboard module error:", error);
+            console.error("Keyboard module error:", error);
         }
-    }, []);
+    }, [showComments]); // ✅ correct dependency
+
 
     /**
      * Handle XML updates (for file opens and diagram switches)
