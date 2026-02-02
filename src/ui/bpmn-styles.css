@@ -1547,6 +1547,9 @@
   pointer-events: none;
 }
 
+.comment-count:empty {
+    display: none;
+}
 
 /* -----------------------------
    Popup panel
