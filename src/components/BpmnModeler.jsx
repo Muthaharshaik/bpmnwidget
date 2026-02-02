@@ -48,6 +48,7 @@ const DEFAULT_BPMN_XML = `<?xml version="1.0" encoding="UTF-8"?>
 
 export const BpmnModelerComponent = ({
     initialXml,
+    showComments,
     onError,
     onModelerReady,
     editorActionsRef,
@@ -102,38 +103,6 @@ export const BpmnModelerComponent = ({
         });
     }, []);
 
-    //   /* =====================================================
-    //  🔥 DELETE BUTTON LOGIC (CORRECT PLACE)
-    //  ===================================================== */
-    // const injectDeleteButtons = useCallback((elementId) => {
-    //     if (!modelerRef.current || !elementId) return;
-
-    //     const embeddedComments = modelerRef.current.get("embeddedComments");
-    //     if (!embeddedComments) return;
-
-    //     // Wait until DOM is rendered
-    //     setTimeout(() => {
-    //     const commentEls = document.querySelectorAll(
-    //         ".djs-overlay-comments .comment"
-    //     );
-
-    //     commentEls.forEach((commentEl, index) => {
-    //         if (commentEl.querySelector(".comment-delete-btn")) return;
-
-    //         const btn = document.createElement("button");
-    //         btn.className = "comment-delete-btn";
-    //         btn.innerHTML = "🗑";
-
-    //         btn.onclick = (e) => {
-    //         e.stopPropagation();
-    //         embeddedComments.remove(elementId, index);
-    //         };
-
-    //         commentEl.style.position = "relative";
-    //         commentEl.appendChild(btn);
-    //     });
-    //     }, 0);
-    // }, []);
 
     /**
      * Initialize the BPMN Modeler (runs once on mount)
@@ -141,32 +110,38 @@ export const BpmnModelerComponent = ({
     useEffect(() => {
         if (!containerRef.current) return;
 
+        if (modelerRef.current) {
+            modelerRef.current.destroy();
+            modelerRef.current = null;
+        }
+
+        const additionalModules = [
+            CreateAppendAnythingModule,
+            ColorPickerModule,
+            TokenSimulationModeler,
+            BpmnPropertiesPanelModule,
+            BpmnPropertiesProviderModule
+        ]
+
+        if (showComments) additionalModules.push(EmbeddedComments);
+
         const modeler = new BpmnModeler({
             container: containerRef.current,
             propertiesPanel: {
                 parent: "#js-properties-panel"
             },
-            additionalModules: [
-                CreateAppendAnythingModule,
-                ColorPickerModule,
-                TokenSimulationModeler,
-                BpmnPropertiesPanelModule,
-                BpmnPropertiesProviderModule,
-                EmbeddedComments
-            ],
+            additionalModules,
             moddleExtensions: {
                 custom: customModdle
             },
-            // ✅ Add this configuration
-           embeddedComments: {
-            editable: true,
-            // Enable overlay mode
-            overlayConfig: {
-                show: {
-                    minZoom: 0.5
+            ...(showComments && {
+            embeddedComments: {
+                editable: true,
+                overlayConfig: {
+                show: { minZoom: 0.5 }
                 }
             }
-        }
+            })
         });
 
         modelerRef.current = modeler;
@@ -217,7 +192,7 @@ export const BpmnModelerComponent = ({
                 modelerRef.current.destroy();
             }
         };
-    }, []); // Empty deps = runs once
+    }, [showComments]); // Empty deps = runs once
 
     
     // /* =====================================================

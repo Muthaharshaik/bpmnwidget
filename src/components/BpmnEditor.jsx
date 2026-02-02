@@ -42,6 +42,8 @@ export const BpmnEditor = ({ initialXml, onSave, onCancel, bpmnFile, onTasksExtr
     const [isBottleneckMode, setIsBottleneckMode] = useState(false);
     const [expandedPanel, setExpandedPanel] = useState(null);
     const [isTaskDataApplied, setIsTaskDataApplied] = useState(false);
+    const [showComments, setShowComments] = useState(false)
+    const [isTogglingComments, setIsTogglingComments] = useState(false)
 
 
     // Refs
@@ -91,6 +93,7 @@ export const BpmnEditor = ({ initialXml, onSave, onCancel, bpmnFile, onTasksExtr
     const handleModelerReady = async methods => {
         modelerMethodsRef.current = methods;
         setIsLoading(false);
+        setIsTogglingComments(false);
         setIsTaskDataApplied(false);
 
         const modeler = methods.getModeler();
@@ -704,6 +707,23 @@ useEffect(() => {
                         >
                             {isBottleneckMode ? "Hide Bottleneck" : "Show Bottleneck"}
                         </button>
+                        {/** Comments toggle button */}
+                        <button 
+                            type="button"
+                            className="bpmn-btn bpmn-btn-secondary"
+                            disabled={isTogglingComments}
+                            onClick={() => {
+                                setIsTogglingComments(true);
+                                setShowComments(prev => !prev);
+                            }}
+                        >
+                        {isTogglingComments
+                            ? "Loading Comments..."
+                            : showComments
+                            ? "Hide Comments"
+                            : "Show Comments"
+                        }
+                        </button>
                     </div>
 
                     <div className="bpmn-toolbar-right">
@@ -757,6 +777,7 @@ useEffect(() => {
                 <div className="bpmn-canvas-wrapper">
                     <BpmnModelerComponent
                         initialXml={currentXml}
+                        showComments={showComments}
                         onError={handleError}
                         onModelerReady={handleModelerReady}
                         editorActionsRef={editorActionsRef}
