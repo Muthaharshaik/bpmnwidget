@@ -9,7 +9,7 @@ import { extractTasks } from "../utils/taskExtractor";
 import { updateTasks } from "../utils/taskUpdater";
 import { customModdle } from "../utils/customModdle";
 import { BpmnPropertiesPanelModule, BpmnPropertiesProviderModule } from "bpmn-js-properties-panel";
-// import CustomModules from "../custom";
+import CustomModules from "../custom";
 import EmbeddedComments from 'bpmn-js-embedded-comments';
 
 
@@ -120,7 +120,8 @@ export const BpmnModelerComponent = ({
             ColorPickerModule,
             TokenSimulationModeler,
             BpmnPropertiesPanelModule,
-            BpmnPropertiesProviderModule
+            BpmnPropertiesProviderModule,
+            CustomModules
         ]
 
         if (showComments) additionalModules.push(EmbeddedComments);
@@ -247,7 +248,7 @@ export const BpmnModelerComponent = ({
             keyboard = modelerRef.current.get("keyboard");
             if (!keyboard) return;
 
-            console.info("Keyboard module active");
+            console.log("Keyboard module active");
 
             const handler = ({ keyEvent, target }) => {
                 // Ignore typing in inputs / text areas
@@ -375,6 +376,16 @@ export const BpmnModelerComponent = ({
         }
     }, [isSimulationMode]);
 
+    useEffect(() => {
+        if (!modelerRef.current) return;
+        if (isSimulationMode) return; // Don't attach during simulation
+        
+        // Re-attach properties panel to the (potentially new) DOM element
+        const propertiesPanel = modelerRef.current.get('propertiesPanel');
+        if (propertiesPanel) {
+            propertiesPanel.attachTo('#js-properties-panel');
+        }
+    }, [isSimulationMode]);
     /**
      * Method to export the current diagram as XML
      * This will be called by the parent component (BpmnEditor) when saving

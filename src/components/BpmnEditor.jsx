@@ -1,5 +1,6 @@
 import { createElement, useState, useRef, useEffect, useCallback } from "react";
 import BpmnModelerComponent from "./BpmnModeler";
+import { BpmnDiff } from "./BpmnDiff";
 import folderIcon from "../assets/folder-closed.svg";
 import plusIcon from "../assets/zoom-in.svg";
 import minusIcon from "../assets/zoom-out.svg";
@@ -44,6 +45,7 @@ export const BpmnEditor = ({ initialXml, onSave, onCancel, bpmnFile, onTasksExtr
     const [isTaskDataApplied, setIsTaskDataApplied] = useState(false);
     const [showComments, setShowComments] = useState(false)
     const [isTogglingComments, setIsTogglingComments] = useState(false)
+    const [showDiff, setShowDiff] = useState(false);
 
 
     // Refs
@@ -101,7 +103,7 @@ export const BpmnEditor = ({ initialXml, onSave, onCancel, bpmnFile, onTasksExtr
 
         // ✅ TOKEN SIMULATION TOGGLE (THIS IS THE KEY)
         const onToggleMode = event => {
-            console.info("Simulation mode toggled:", event.active);
+            console.log("Simulation mode toggled:", event.active);
             setIsSimulationMode(!!event.active);
         };
 
@@ -724,6 +726,14 @@ useEffect(() => {
                             : "Show Comments"
                         }
                         </button>
+                        <button
+                            type="button"
+                            className="bpmn-btn bpmn-btn-secondary"
+                            onClick={() => setShowDiff(true)}
+                            title="Compare BPMN Versions"
+                        >
+                            Compare Versions
+                        </button>
                     </div>
 
                     <div className="bpmn-toolbar-right">
@@ -829,6 +839,11 @@ useEffect(() => {
                             }`}
                         >
                             <div className="validation-content">
+                                {validationResults.errors.length === 0 && (
+                                    <div className="validation-errors">
+                                        <h5 className="no-error-content">No Validation Errors!</h5>
+                                    </div>
+                                )}
                                 {/* ERRORS */}
                                 {validationResults.errors.length > 0 && (
                                     <div className="validation-errors">
@@ -993,6 +1008,12 @@ useEffect(() => {
                         </div>
                     </div>
                 </div>
+            )}
+            {showDiff && (
+                <BpmnDiff 
+                    onClose={() => setShowDiff(false)} 
+                    currentXml={currentXml}
+                />
             )}
         </div>
     );

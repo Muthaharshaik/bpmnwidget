@@ -48,7 +48,35 @@ export default class CustomRules extends RuleProvider {
       const target = context.target;
       const position = context.position;
 
-      // Add custom validation logic here
+      if(is(target, 'bpmn:Lane') || is(target, 'bpmn:Participant')) {
+        return true;
+      }
+
+      if (is(shape, 'bpmn:FlowNode') && 
+          !is(target, 'bpmn:Lane') &&
+          !is(target, 'bpmn:Participant') &&
+          !is(target, 'bpmn:Process') &&
+          !is(target, 'bpmn:SubProcess')) {
+            return false;
+      }
+
+      return true;
+    });
+
+    this.addRule('shape.move', 1500, function(context) {
+      const shape = context.shape;
+      const target = context.newParent;
+
+      // Prevent moving elements outside lanes
+      if (is(shape, 'bpmn:FlowNode')) {
+        if (!is(target, 'bpmn:Lane') && 
+            !is(target, 'bpmn:Participant') &&
+            !is(target, 'bpmn:Process') &&
+            !is(target, 'bpmn:SubProcess')) {
+          return false; //Block invalid moves
+        }
+      }
+
       return true;
     });
   }

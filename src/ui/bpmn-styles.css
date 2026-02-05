@@ -1417,6 +1417,13 @@
     overflow: auto;
 }
 
+.validation-errors .no-error-content {
+    padding: 5px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: gray;
+}
 /* =====================================================
    BPMN EMBEDDED COMMENTS – FINAL POLISHED UI
    Library-safe | CSS-only | Production-ready
@@ -1824,4 +1831,174 @@
   background-position: center;
 }
 
+
+.bpmn-diff-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: white;
+    z-index: 10000;
+    display: flex;
+    flex-direction: column;
+}
+
+.diff-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 24px;
+    border-bottom: 1px solid #ddd;
+}
+
+.diff-close-btn {
+    font-size: 32px;
+    border: none;
+    background: none;
+    cursor: pointer;
+}
+
+.diff-viewers {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+}
+
+.diff-viewer-wrapper {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    border-right: 2px solid #ddd;
+}
+
+.diff-viewer-wrapper:last-child {
+    border-right: none;
+}
+
+.diff-viewer-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    background: #f5f5f5;
+    border-bottom: 1px solid #ddd;
+}
+
+.version-label {
+    font-weight: 600;
+    color: #666;
+}
+
+.choose-file-btn {
+    padding: 6px 12px;
+    border: 1px solid #ccc;
+    background: white;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.diff-canvas {
+    flex: 1;
+    position: relative;
+}
+
+.diff-changes-panel {
+    position: absolute;
+    bottom: 24px;
+    right: 24px;
+    background: white;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    max-width: 300px;
+    max-height: 400px;
+    overflow: hidden;
+}
+
+.changes-toggle-btn {
+    width: 100%;
+    padding: 12px;
+    border: none;
+    background: #f5f5f5;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: left;
+}
+
+.changes-list {
+    max-height: 350px;
+    overflow-y: auto;
+}
+
+.changes-content {
+    padding: 12px;
+}
+
+.change-group {
+    margin-bottom: 16px;
+}
+
+.change-group-title {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.change-group-title.added { color: #52b415; }
+.change-group-title.removed { color: #cc0000; }
+.change-group-title.changed { color: #ffc800; }
+.change-group-title.layout { color: #0d4f8b; }
+
+.change-item {
+    padding: 4px 8px;
+    margin-bottom: 4px;
+    border-radius: 3px;
+    font-size: 13px;
+}
+
+.change-item.added {
+    background: rgba(82, 180, 21, 0.1);
+    color: #52b415;
+}
+
+.change-item.removed {
+    background: rgba(204, 0, 0, 0.1);
+    color: #cc0000;
+}
+
+.change-item.changed {
+    background: rgba(255, 200, 0, 0.1);
+    color: #ffc800;
+}
+
+.change-item.layout {
+    background: rgba(13, 79, 139, 0.1);
+    color: #0d4f8b;
+}
+
+/* Diff markers on canvas */
+.diff-added .djs-visual > :nth-child(1) {
+    stroke: #52b415 !important;
+    stroke-width: 3px !important;
+    fill: rgba(82, 180, 21, 0.2) !important;
+}
+
+.diff-removed .djs-visual > :nth-child(1) {
+    stroke: #cc0000 !important;
+    stroke-width: 3px !important;
+    fill: rgba(204, 0, 0, 0.2) !important;
+}
+
+.diff-changed .djs-visual > :nth-child(1) {
+    stroke: #ffc800 !important;
+    stroke-width: 3px !important;
+    fill: rgba(255, 200, 0, 0.2) !important;
+}
+
+.diff-layout-changed .djs-visual > :nth-child(1) {
+    stroke: #0d4f8b !important;
+    stroke-width: 2px !important;
+    stroke-dasharray: 5, 5 !important;
+}
 
