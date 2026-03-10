@@ -26,11 +26,36 @@ export function Bpmnwidget(props) {
         onSaveAction,
         onCancelAction,
         taskDataJson,
+        currentUserEmail,      
+        lockedUserEmail,
         class: className,
         style,
         tabIndex
     } = props;
 
+    //Check if locked by another user
+    const isLockedByAnotherUser = useMemo(() => {
+        if (currentUserEmail?.status === "loading" || 
+            lockedUserEmail?.status === "loading") {
+            return true;
+        }
+
+        if (!lockedUserEmail?.value || !lockedUserEmail.value.trim()) {
+            return true; // No checkout = read-only
+        }
+        
+        if (!currentUserEmail?.value || !currentUserEmail.value.trim()) {
+            return true;
+        }
+        
+        const currentEmail = currentUserEmail.value.toLowerCase().trim();
+        const lockedEmail = lockedUserEmail.value.toLowerCase().trim();
+        
+        return currentEmail !== lockedEmail;
+    }, [currentUserEmail?.value, currentUserEmail?.status, 
+        lockedUserEmail?.value, lockedUserEmail?.status]);
+
+    
     /**
      * Get the current BPMN XML value from Mendix attribute
      * useMemo ensures we only recompute when bpmnXML changes
@@ -132,6 +157,7 @@ export function Bpmnwidget(props) {
                 bpmnFile={currentBpmnName}
                 onTasksExtracted={handleTasksExtracted}
                 taskDataJson={taskDataJson?.value}
+                isReadOnly={isLockedByAnotherUser} 
             />
         </div>
     );

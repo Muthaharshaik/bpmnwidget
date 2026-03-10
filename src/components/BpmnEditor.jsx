@@ -29,7 +29,7 @@ import { applyBottleneckColors, clearBottleneckColors } from "../utils/bottlenec
  * - onCancel: Callback function when user cancels
  */
 
-export const BpmnEditor = ({ initialXml, onSave, onCancel, bpmnFile, onTasksExtracted, taskDataJson }) => {
+export const BpmnEditor = ({ initialXml, onSave, onCancel, bpmnFile, onTasksExtracted, taskDataJson,isReadOnly }) => {
     // State management
     const [error, setError] = useState(null);
     const [isSaving, setIsSaving] = useState(false);
@@ -164,6 +164,11 @@ export const BpmnEditor = ({ initialXml, onSave, onCancel, bpmnFile, onTasksExtr
     const handleSave = async () => {
         if (!modelerMethodsRef.current) {
             setError("Modeler not ready");
+            return;
+        }
+
+        if (isReadOnly) {
+            setError("Cannot save in read-only mode. Please check out the diagram first.");
             return;
         }
 
@@ -573,197 +578,210 @@ useEffect(() => {
     }, {});
 
     return (
-        <div className="bpmn-editor-container">
-            {/* Toolbar */}
-            {!isSimulationMode && (
-                <div className="bpmn-toolbar">
-                    <div className="bpmn-toolbar-left">
-                        <h3 className="bpmn-title">BPMN Diagram</h3>
-                    </div>
+    <div className={`bpmn-editor-container ${isReadOnly ? "readonly-mode" : ""}`}>
 
-                    <div className="bpmn-toolbar-center">
-                        {/* Zoom controls */}
+        {/* ================= TOOLBAR ================= */}
+        {!isSimulationMode && (
+            <div className="bpmn-toolbar">
+
+                {/* LEFT */}
+                <div className="bpmn-toolbar-left">
+                    <h3 className="bpmn-title">
+                        BPMN Diagram {isReadOnly && "(Read-Only)"}
+                    </h3>
+                </div>
+
+                {/* CENTER */}
+                <div className="bpmn-toolbar-center">
+
+                    {/* Zoom Controls */}
+                    <div className="bpmn-zoom-controls">
                         <button
                             type="button"
                             className="bpmn-btn bpmn-btn-icon"
                             onClick={handleZoomIn}
-                            title="Zoom In"
                             disabled={isLoading}
+                            title="Zoom In"
                         >
-                            <img src={plusIcon} style={{ width: 18, height: 18 }} alt="Zoom In" />
+                            <img src={plusIcon} width={18} height={18} alt="Zoom In" />
                         </button>
 
                         <button
                             type="button"
                             className="bpmn-btn bpmn-btn-icon"
                             onClick={handleZoomOut}
-                            title="Zoom Out"
                             disabled={isLoading}
+                            title="Zoom Out"
                         >
-                            <img src={minusIcon} style={{ width: 18, height: 18 }} alt="Zoom Out" />
+                            <img src={minusIcon} width={18} height={18} alt="Zoom Out" />
                         </button>
 
                         <button
                             type="button"
                             className="bpmn-btn bpmn-btn-icon"
                             onClick={handleZoomFit}
+                            disabled={isLoading}
                             title="Fit to Screen"
-                            disabled={isLoading}
                         >
-                            <img src={resetIcon} style={{ width: 18, height: 18 }} alt="Fit to Screen" />
-                        </button>
-
-                        {/* Hidden file input */}
-                        <input
-                            ref={fileInputRef}
-                            type="file"
-                            accept=".bpmn,.xml,.bpmn20.xml"
-                            onChange={handleOpenFile}
-                            style={{ display: "none" }}
-                        />
-
-                        {/* Open File button */}
-                        <button
-                            type="button"
-                            className="bpmn-btn bpmn-btn-secondary"
-                            onClick={() => fileInputRef.current?.click()}
-                            disabled={isLoading || isImporting}
-                            title="Open BPMN diagram from local file system"
-                        >
-                            <img src={folderIcon} style={{ width: 18, height: 18 }} alt="Open File" />
-                        </button>
-
-                        {/* Download dropdown menu */}
-                        <div className="download-wrapper">
-                            <button
-                                type="button"
-                                className="bpmn-btn bpmn-btn-secondary download-btn"
-                                onClick={e => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    setOpen(prev => !prev);
-                                }}
-                                disabled={isLoading}
-                                title="Download diagram"
-                            >
-                                <img src={downloadIcon} style={{ width: 18, height: 18 }} alt="Download" />
-                            </button>
-
-                            {open && (
-                                <div className="download-menu" onMouseDown={e => e.stopPropagation()}>
-                                    <div
-                                        className="download-item"
-                                        onClick={e => {
-                                            e.preventDefault();
-                                            e.stopPropagation();
-                                            handleDownloadSVG();
-                                            setOpen(false);
-                                        }}
-                                    >
-                                        Download SVG
-                                    </div>
-                                    <div
-                                        className="download-item"
-                                        onClick={e => {
-                                            e.preventDefault();
-                                            e.stopPropagation();
-                                            handleDownloadBPMN();
-                                            setOpen(false);
-                                        }}
-                                    >
-                                        Download BPMN
-                                    </div>
-                                    <div
-                                        className="download-item"
-                                        onClick={e => {
-                                            e.preventDefault();
-                                            e.stopPropagation();
-                                            handleDownloadPDF();
-                                            setOpen(false);
-                                        }}
-                                    >
-                                        Download PDF
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                        {/* KeyBoard shortcuts */}
-                        <button
-                            type="button"
-                            className="bpmn-btn bpmn-btn-secondary"
-                            onClick={() => setShowKeyboardShortcuts(true)}
-                            title="Keyboard Shortcuts"
-                            disabled={isLoading}
-                        >
-                            <img src={keyboardIcon} style={{ width: 18, height: 18 }} alt="Key Board" />
-                        </button>
-                        {/* In the toolbar center section, add this button: */}
-                        <button
-                            type="button"
-                            className={`bpmn-btn bpmn-btn-secondary bpmn-btn-bottleneck ${
-                                isBottleneckMode ? "active" : ""
-                            }`}
-                            onClick={handleBottleneckAnalysis}
-                            disabled={isLoading}
-                            title="Show task with high execution time"
-                        >
-                            {isBottleneckMode ? "Hide Bottleneck" : "Show Bottleneck"}
-                        </button>
-                        {/** Comments toggle button */}
-                        <button 
-                            type="button"
-                            className="bpmn-btn bpmn-btn-secondary"
-                            disabled={isTogglingComments}
-                            onClick={() => {
-                                setIsTogglingComments(true);
-                                setShowComments(prev => !prev);
-                            }}
-                        >
-                        {isTogglingComments
-                            ? "Loading Comments..."
-                            : showComments
-                            ? "Hide Comments"
-                            : "Show Comments"
-                        }
-                        </button>
-                        <button
-                            type="button"
-                            className="bpmn-btn bpmn-btn-secondary"
-                            onClick={() => setShowDiff(true)}
-                            title="Compare BPMN Versions"
-                        >
-                            Compare Versions
+                            <img src={resetIcon} width={18} height={18} alt="Fit to Screen" />
                         </button>
                     </div>
 
-                    <div className="bpmn-toolbar-right">
-                        {/* Action buttons */}
-                        {onCancel && (
+                    {/* Open File */}
+                    {!isReadOnly && (
+                        <div className="bpmn-file-open">
+                            <input
+                                ref={fileInputRef}
+                                type="file"
+                                accept=".bpmn,.xml,.bpmn20.xml"
+                                onChange={handleOpenFile}
+                                style={{ display: "none" }}
+                            />
                             <button
                                 type="button"
                                 className="bpmn-btn bpmn-btn-secondary"
-                                onClick={handleCancel}
-                                disabled={isSaving}
+                                onClick={() => fileInputRef.current?.click()}
+                                disabled={isLoading || isImporting}
+                                title="Open BPMN diagram"
                             >
-                                Cancel
+                                <img src={folderIcon} width={18} height={18} alt="Open File" />
                             </button>
-                        )}
-                        {onSave && (
-                            <button
-                                type="button"
-                                className="bpmn-btn bpmn-btn-primary"
-                                onClick={handleSave}
-                                disabled={isSaving || isLoading}
+                        </div>
+                    )}
+
+                    {/* Download */}
+                    <div className="download-wrapper">
+                        <button
+                            type="button"
+                            className="bpmn-btn bpmn-btn-secondary"
+                            onClick={e => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                setOpen(prev => !prev);
+                            }}
+                            disabled={isLoading}
+                            title="Download"
+                        >
+                            <img src={downloadIcon} width={18} height={18} alt="Download" />
+                        </button>
+
+                        {open && (
+                            <div
+                                className="download-menu"
+                                onMouseDown={e => e.stopPropagation()}
                             >
-                                {isSaving ? "Saving..." : "Save"}
-                            </button>
+                                <div
+                                    className="download-item"
+                                    onClick={() => {
+                                        handleDownloadSVG();
+                                        setOpen(false);
+                                    }}
+                                >
+                                    Download SVG
+                                </div>
+
+                                <div
+                                    className="download-item"
+                                    onClick={() => {
+                                        handleDownloadBPMN();
+                                        setOpen(false);
+                                    }}
+                                >
+                                    Download BPMN
+                                </div>
+
+                                <div
+                                    className="download-item"
+                                    onClick={() => {
+                                        handleDownloadPDF();
+                                        setOpen(false);
+                                    }}
+                                >
+                                    Download PDF
+                                </div>
+                            </div>
                         )}
                     </div>
+
+                    {/* Editable Only Buttons */}
+                    {!isReadOnly && (
+                        <div className="bpmn-editing-controls">
+                            <button
+                                type="button"
+                                className="bpmn-btn bpmn-btn-secondary"
+                                onClick={() => setShowKeyboardShortcuts(true)}
+                                disabled={isLoading}
+                            >
+                                <img src={keyboardIcon} width={18} height={18} alt="Keyboard" />
+                            </button>
+
+                            <button
+                                type="button"
+                                className={`bpmn-btn bpmn-btn-secondary ${
+                                    isBottleneckMode ? "active" : ""
+                                }`}
+                                onClick={handleBottleneckAnalysis}
+                                disabled={isLoading}
+                            >
+                                {isBottleneckMode ? "Hide Bottleneck" : "Show Bottleneck"}
+                            </button>
+
+                            <button
+                                type="button"
+                                className="bpmn-btn bpmn-btn-secondary"
+                                disabled={isTogglingComments}
+                                onClick={() => {
+                                    setIsTogglingComments(true);
+                                    setShowComments(prev => !prev);
+                                }}
+                            >
+                                {isTogglingComments
+                                    ? "Loading Comments..."
+                                    : showComments
+                                    ? "Hide Comments"
+                                    : "Show Comments"}
+                            </button>
+
+                            <button
+                                type="button"
+                                className="bpmn-btn bpmn-btn-secondary"
+                                onClick={() => setShowDiff(true)}
+                            >
+                                Compare Versions
+                            </button>
+                        </div>
+                    )}
                 </div>
-            )}
+
+                {/* RIGHT */}
+                <div className="bpmn-toolbar-right">
+                    {onCancel && (
+                        <button
+                            type="button"
+                            className="bpmn-btn bpmn-btn-secondary"
+                            onClick={handleCancel}
+                            disabled={isSaving}
+                        >
+                            {isReadOnly ? "Close" : "Cancel"}
+                        </button>
+                    )}
+
+                    {onSave && !isReadOnly && (
+                        <button
+                            type="button"
+                            className="bpmn-btn bpmn-btn-primary"
+                            onClick={handleSave}
+                            disabled={isSaving || isLoading}
+                        >
+                            {isSaving ? "Saving..." : "Save"}
+                        </button>
+                    )}
+                </div>
+            </div>
+        )}
 
             {/* Error display */}
-            {error && (
+            {error && !isReadOnly &&(
                 <div className="bpmn-error-banner">
                     <span className="bpmn-error-icon">⚠</span>
                     <span className="bpmn-error-text">{error}</span>
@@ -796,6 +814,7 @@ useEffect(() => {
                             modelerMethodsRef.current?.applyValidationMarkers(errors, warnings);
                         }}
                         isSimulationMode={isSimulationMode}
+                        isReadOnly={isReadOnly}
                     />
                 </div>
 

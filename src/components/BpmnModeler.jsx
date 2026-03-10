@@ -53,7 +53,8 @@ export const BpmnModelerComponent = ({
     onModelerReady,
     editorActionsRef,
     onValidate,
-    isSimulationMode
+    isSimulationMode,
+    isReadOnly
 }) => {
     const containerRef = useRef(null);
     const modelerRef = useRef(null);
@@ -137,7 +138,7 @@ export const BpmnModelerComponent = ({
             },
             ...(showComments && {
             embeddedComments: {
-                editable: true,
+                editable: !isReadOnly,
                 overlayConfig: {
                 show: { minZoom: 0.5 }
                 }
@@ -159,6 +160,13 @@ export const BpmnModelerComponent = ({
 
                 const canvas = modeler.get("canvas");
                 const eventBus = modeler.get("eventBus");
+                if (isReadOnly) {
+                    eventBus.on('commandStack.execute', 10000, (event) => {
+                        event.stopPropagation();
+                        return false;
+                    });
+                }
+
 
                 // Listen for subprocess drill-down navigation
                 eventBus.on("root.set", function () {});
@@ -193,7 +201,7 @@ export const BpmnModelerComponent = ({
                 modelerRef.current.destroy();
             }
         };
-    }, [showComments]); // Empty deps = runs once
+    }, [showComments,isReadOnly]); // Empty deps = runs once
 
     
     // /* =====================================================
@@ -490,7 +498,7 @@ export const BpmnModelerComponent = ({
         });
     }, []);
 
-    return <div ref={containerRef} className="bpmn-modeler-container"></div>;
+    return <div ref={containerRef} className="bpmn-modeler-container" data-readonly={isReadOnly}></div>;
 };
 
 export default BpmnModelerComponent;
