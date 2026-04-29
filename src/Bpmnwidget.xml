@@ -72,6 +72,18 @@
                 </attributeTypes>
             </property>
 
+            <property key="selectedTaskId" type="attribute" required="false">
+                <caption>Selected Task ID</caption>
+                <description>Stores the ID of the task clicked in the diagram</description>
+                <attributeTypes>
+                    <attributeType name="String"/>
+                </attributeTypes>
+            </property>
+
+            <property key="onTaskClickAction" type="action" required="false">
+                <caption>On Task Click</caption>
+                <description>Action triggered when a task is clicked in the diagram. Use Selected Task ID attribute to get the task ID.</description>
+            </property>
 
         </propertyGroup>
 

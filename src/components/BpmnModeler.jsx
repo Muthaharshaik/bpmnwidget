@@ -54,11 +54,13 @@ export const BpmnModelerComponent = ({
     editorActionsRef,
     onValidate,
     isSimulationMode,
-    isReadOnly
+    isReadOnly,
+    onTaskAction
 }) => {
     const containerRef = useRef(null);
     const modelerRef = useRef(null);
     const lastImportedXmlRef = useRef(null);
+    const onTaskActionRef = useRef(onTaskAction);
 
     /**
      * Token simulation hook
@@ -104,7 +106,9 @@ export const BpmnModelerComponent = ({
         });
     }, []);
 
-
+    useEffect(() => {
+        onTaskActionRef.current = onTaskAction;
+    }, [onTaskAction]);
     /**
      * Initialize the BPMN Modeler (runs once on mount)
      */
@@ -172,6 +176,12 @@ export const BpmnModelerComponent = ({
                 eventBus.on("root.set", function () {});
 
                 fitAndCenter(modeler);
+                eventBus.on("element.click", ({ element }) => {
+                    const type = element?.businessObject?.$type || "";
+                    if (type.endsWith("Task")) {
+                        onTaskActionRef.current?.(element.businessObject.id); // ← always fresh
+                    }
+                });
 
                 // Notify parent that modeler is ready
                 if (onModelerReady) {

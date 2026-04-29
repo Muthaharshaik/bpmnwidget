@@ -28,6 +28,8 @@ export function Bpmnwidget(props) {
         taskDataJson,
         currentUserEmail,      
         lockedUserEmail,
+        selectedTaskId,
+        onTaskClickAction,
         class: className,
         style,
         tabIndex
@@ -69,6 +71,18 @@ export function Bpmnwidget(props) {
     }, [bpmnXML]);
 
     const currentBpmnName = bpmnName?.status === "available" ? bpmnName.value : null;
+
+    const handleTaskAction = useCallback(
+        (taskId) => {
+            if (selectedTaskId?.status === "available") {
+                selectedTaskId.setValue(taskId);
+            }
+            if (onTaskClickAction?.canExecute) {
+                onTaskClickAction.execute();
+            }
+        },
+        [selectedTaskId, onTaskClickAction]
+   );
 
     /**
      * Handle Save
@@ -157,7 +171,8 @@ export function Bpmnwidget(props) {
                 bpmnFile={currentBpmnName}
                 onTasksExtracted={handleTasksExtracted}
                 taskDataJson={taskDataJson?.value}
-                isReadOnly={isLockedByAnotherUser} 
+                isReadOnly={isLockedByAnotherUser}
+                onTaskAction={handleTaskAction}
             />
         </div>
     );

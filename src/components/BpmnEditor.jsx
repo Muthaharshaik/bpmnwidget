@@ -14,7 +14,8 @@ export const BpmnEditor = ({
     bpmnFile,
     onTasksExtracted,
     taskDataJson,
-    isReadOnly
+    isReadOnly,
+    onTaskAction
 }) => {
     // ─── State ────────────────────────────────────────────────────────────────
     const [error, setError]                         = useState(null);
@@ -738,6 +739,7 @@ export const BpmnEditor = ({
                         }}
                         isSimulationMode={isSimulationMode}
                         isReadOnly={isReadOnly}
+                        onTaskAction={onTaskAction}
                     />
                     {/* Sidebar edge toggle tab */}
                     {!isSimulationMode && (
