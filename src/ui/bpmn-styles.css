@@ -441,11 +441,25 @@
 
 /* Sidebar layout */
 .bpmn-right-sidebar {
-    width: 320px;
-    display: flex;
-    flex-direction: column;
-    border-left: 1px solid #d0d0d0;
-    background: #fafafa;
+  width: 320px;
+  min-width: 320px;        /* prevents flex squishing during transition */
+  display: flex;
+  flex-direction: column;
+  border-left: 1px solid #d0d0d0;
+  background: #fafafa;
+  overflow: hidden;        /* clips content as width collapses */
+  transition: width 0.25s ease, min-width 0.25s ease,
+              opacity 0.2s ease, border-width 0.25s ease;
+  opacity: 1;
+}
+
+/* Collapsed state — add this class via JS */
+.bpmn-right-sidebar.sidebar-hidden {
+  width: 0;
+  min-width: 0;
+  border-left-width: 0;
+  opacity: 0;
+  pointer-events: none;
 }
 
 /* Headers */
@@ -680,6 +694,323 @@
     stroke-width: 3px !important;
 }
 
+.bpmn-widget .djs-palette.two-column.open {
+    height: calc(100% - 70px);
+    width: 105px;
+    overflow-y: auto;
+}
+
+.bpmn-widget .bpmn-zoom-controls {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    border-right: 1px solid #d0d0d0;
+    padding-right: 6px;
+    margin-right: 2px;
+}
+
+.bpmn-widget .bpmn-editing-controls {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.bpmn-widget .bpmn-file-open {
+    display: flex;
+    align-items: center;
+}
+
+.bpmn-widget .bpmn-toolbar {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    padding: 8px 16px;
+    background-color: #e6eef8;
+    border-bottom: 1px solid #d0d0d0;
+    min-height: 52px;
+}
+
+.bpmn-widget .bpmn-toolbar-left {
+    justify-self: start;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+
+.bpmn-widget .bpmn-toolbar-center {
+    justify-self: center;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: nowrap;
+}
+
+.bpmn-widget .bpmn-toolbar-right {
+    justify-self: end;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+
+.bpmn-widget .bpmn-editable-controls {
+    display: flex;
+    align-items: center;
+    gap: 0;
+}
+
+/* ===================================
+   NEW TOOLBAR STYLES
+   =================================== */
+
+.bpmn-widget .bpmn-toolbar {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    padding: 0 16px;
+    background: #ffffff;
+    border-bottom: 1px solid #e0e0e0;
+    min-height: 52px;
+}
+
+.bpmn-widget .bpmn-toolbar-left {
+    justify-self: start;
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    height: 52px;
+}
+
+.bpmn-widget .bpmn-toolbar-center {
+    justify-self: center;
+}
+
+.bpmn-widget .bpmn-toolbar-right {
+    justify-self: end;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Title */
+.bpmn-widget .bpmn-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: #1a1a2e;
+    white-space: nowrap;
+    margin-right: 4px;
+}
+
+/* Read-Only badge */
+.bpmn-widget .bpmn-readonly-badge {
+    font-size: 11px;
+    font-weight: 600;
+    color: #888;
+    background: #f5f5f5;
+    border: 1px solid #e4e4e4;
+    padding: 2px 8px;
+    border-radius: 10px;
+    margin-left: 4px;
+    white-space: nowrap;
+}
+
+/* Divider */
+.bpmn-widget .bpmn-toolbar-divider {
+    width: 1px;
+    height: 22px;
+    background: #e4e4e4;
+    margin: 0 10px;
+    flex-shrink: 0;
+}
+
+/* Icon buttons */
+.bpmn-widget .bpmn-btn-icon {
+    width: 32px;
+    height: 32px;
+    background: transparent;
+    border: none;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: #555;
+    transition: background 0.15s;
+    padding: 0;
+}
+
+.bpmn-widget .bpmn-btn-icon:hover:not(:disabled) {
+    background: #f0f0f0;
+}
+
+.bpmn-widget .bpmn-btn-icon:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+/* Dropdown trigger buttons */
+.bpmn-widget .bpmn-btn-dropdown {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0 12px;
+    height: 34px;
+    background: transparent;
+    border: 1px solid #e8e8e8;
+    border-radius: 7px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    color: #333;
+    transition: all 0.15s;
+    white-space: nowrap;
+    margin-left: 4px;
+}
+
+.bpmn-widget .bpmn-btn-dropdown:hover:not(:disabled) {
+    background: #f5f5f5;
+    border-color: #ccc;
+}
+
+.bpmn-widget .bpmn-btn-dropdown.active {
+    background: #f0f5ff;
+    border-color: #3b82f6;
+    color: #3b82f6;
+}
+
+.bpmn-widget .bpmn-dropdown-caret {
+    font-size: medium;
+    color: #aaa;
+    margin-left: 1px;
+}
+
+/* Dropdown wrapper + menu */
+.bpmn-widget .bpmn-dropdown-wrapper {
+    position: relative;
+    display: inline-block;
+}
+
+.bpmn-widget .bpmn-dropdown-menu {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    min-width: 190px;
+    background: white;
+    border: 1px solid #e4e4e4;
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    padding: 6px;
+    z-index: 1000;
+}
+
+.bpmn-widget .bpmn-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 12px;
+    border-radius: 5px;
+    font-size: 13px;
+    color: #333;
+    cursor: pointer;
+    transition: background 0.12s;
+    white-space: nowrap;
+}
+
+.bpmn-widget .bpmn-menu-item:hover {
+    background: #f0f5ff;
+    color: #3b82f6;
+}
+
+/* Cancel / Save buttons */
+.bpmn-widget .bpmn-btn-secondary {
+    padding: 0 14px;
+    height: 34px;
+    background: transparent;
+    border: 1px solid #e0e0e0;
+    border-radius: 7px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    color: #555;
+    transition: background 0.15s;
+}
+
+.bpmn-widget .bpmn-btn-secondary:hover:not(:disabled) {
+    background: #f5f5f5;
+}
+
+.bpmn-widget .bpmn-btn-primary {
+    padding: 0 18px;
+    height: 34px;
+    background: #3b82f6;
+    border: none;
+    border-radius: 7px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    color: white;
+    transition: background 0.15s;
+}
+
+.bpmn-widget .bpmn-btn-primary:hover:not(:disabled) {
+    background: #2563eb;
+}
+
+.bpmn-widget .bpmn-btn-primary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.bpmn-sidebar-edge-btn {
+  position: absolute;
+  top: 8%;
+  right: 0;
+  transform: translate(0, -50%);
+  width: 20px;
+  height: 48px;
+  background: var(--color-background-primary, #fff);
+  border: 0.5px solid #d0d0d0;
+  border-right: none;
+  border-radius: 6px 0 0 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #555;
+  box-shadow: -2px 0 6px rgba(0,0,0,0.07);
+  z-index: 10;
+  padding: 0;
+  transition: background 0.15s, color 0.15s, right 0.25s ease;
+}
+.bpmn-right-sidebar > * {
+  transition: opacity 0.15s ease;
+}
+
+.bpmn-right-sidebar.sidebar-hidden > * {
+  opacity: 0;
+}
+.bpmn-sidebar-edge-btn:hover {
+  background: #f0f5ff;
+  color: #3b82f6;
+}
+
+.bpmn-sidebar-edge-btn.panel-closed {
+  right: 0;
+  color: #3b82f6;
+  border-color: #3b82f6;
+  background: #f0f5ff;
+}
+
+.bpmn-sidebar-edge-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Make workspace relative so the tab can anchor to it */
+.bpmn-workspace {
+  position: relative;
+}
 /* ===================================
    Responsive Design
    =================================== */
@@ -1380,15 +1711,6 @@
     .bpmn-canvas-wrapper {
         background: white;
     }
-}
-
-/* Sidebar */
-.bpmn-right-sidebar {
-    width: 320px;
-    display: flex;
-    flex-direction: column;
-    border-left: 1px solid #d0d0d0;
-    background: #fafafa;
 }
 
 /* Headers */

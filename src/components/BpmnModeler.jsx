@@ -71,10 +71,10 @@ export const BpmnModelerComponent = ({
         const canvas = modeler.get("canvas");
         const elementRegistry = modeler.get("elementRegistry");
 
-        // 1️⃣ Fit diagram to viewport
+        // Fit diagram to viewport
         canvas.zoom("fit-viewport");
 
-        // 2️⃣ Enforce minimum zoom (CRITICAL FIX)
+        // Enforce minimum zoom (CRITICAL FIX)
         const MIN_ZOOM = 0.5;
         let zoom = canvas.zoom();
 
@@ -83,7 +83,7 @@ export const BpmnModelerComponent = ({
             zoom = MIN_ZOOM;
         }
 
-        // 3️⃣ Collect diagram elements
+        // Collect diagram elements
         const elements = elementRegistry.getAll().filter(e => e.x != null);
         if (!elements.length) return;
 
@@ -92,7 +92,7 @@ export const BpmnModelerComponent = ({
         const maxX = Math.max(...elements.map(e => e.x + e.width));
         const maxY = Math.max(...elements.map(e => e.y + e.height));
 
-        // 4️⃣ Re-read viewbox AFTER zoom correction
+        // Re-read viewbox AFTER zoom correction
         const viewbox = canvas.viewbox();
 
         // 5️⃣ Center diagram
