@@ -2347,6 +2347,21 @@
     display: none !important;
 }
 
+/* Hide drag affordances. Editing is already blocked by ReadOnlyModule; this
+   removes the handles that would otherwise invite a drag that goes nowhere. */
+.bpmn-modeler-container[data-readonly="true"] .djs-resizer,
+.bpmn-modeler-container[data-readonly="true"] .djs-bendpoint,
+.bpmn-modeler-container[data-readonly="true"] .djs-segment-dragger {
+    display: none !important;
+}
+
+/* Keep the pointer neutral — diagram-js puts `cursor: move` on the hit areas */
+.bpmn-modeler-container[data-readonly="true"] .djs-element .djs-hit-all,
+.bpmn-modeler-container[data-readonly="true"] .djs-element .djs-hit-stroke,
+.bpmn-modeler-container[data-readonly="true"] .djs-element .djs-hit-click-stroke {
+    cursor: default;
+}
+
 /* Prevent editing but allow scrolling & zoom */
 .bpmn-modeler-container[data-readonly="true"] .djs-container {
     pointer-events: auto;

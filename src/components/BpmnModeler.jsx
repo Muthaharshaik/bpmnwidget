@@ -10,6 +10,7 @@ import { updateTasks } from "../utils/taskUpdater";
 import { customModdle } from "../utils/customModdle";
 import { BpmnPropertiesPanelModule, BpmnPropertiesProviderModule } from "bpmn-js-properties-panel";
 import CustomModules from "../custom";
+import ReadOnlyModule from "../custom/ReadOnlyModule";
 import EmbeddedComments from 'bpmn-js-embedded-comments';
 
 
@@ -131,6 +132,10 @@ export const BpmnModelerComponent = ({
 
         if (showComments) additionalModules.push(EmbeddedComments);
 
+        // Disables all modeling (move, resize, rename, delete, create) while
+        // keeping selection, pan, zoom and token simulation usable.
+        if (isReadOnly) additionalModules.push(ReadOnlyModule);
+
         const modeler = new BpmnModeler({
             container: containerRef.current,
             propertiesPanel: {
@@ -164,13 +169,6 @@ export const BpmnModelerComponent = ({
 
                 const canvas = modeler.get("canvas");
                 const eventBus = modeler.get("eventBus");
-                if (isReadOnly) {
-                    eventBus.on('commandStack.execute', 10000, (event) => {
-                        event.stopPropagation();
-                        return false;
-                    });
-                }
-
 
                 // Listen for subprocess drill-down navigation
                 eventBus.on("root.set", function () {});
