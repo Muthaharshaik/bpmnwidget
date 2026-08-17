@@ -1,7 +1,6 @@
 import { createElement, useState, useRef, useEffect, useCallback } from "react";
 import BpmnModelerComponent from "./BpmnModeler";
 import { BpmnDiff } from "./BpmnDiff";
-import downIcon from "../assets/chevron-down.svg";
 import companyLogo from "../assets/LCL-brand-clr-logo.png";
 import watermarkImg from "../assets/LCL-brand-clr-icon.png";
 import jsPDF from "jspdf";
@@ -27,7 +26,7 @@ export const BpmnEditor = ({
     const [isSimulationMode, setIsSimulationMode]   = useState(false);
     const [validationResults, setValidationResults] = useState({ errors: [], warnings: [] });
     const [isBottleneckMode, setIsBottleneckMode]   = useState(false);
-    const [expandedPanel, setExpandedPanel]         = useState(null);
+    const [activeTab, setActiveTab]                 = useState("properties");
     const [isTaskDataApplied, setIsTaskDataApplied] = useState(false);
     const [showComments, setShowComments]           = useState(false);
     const [isTogglingComments, setIsTogglingComments] = useState(false);
@@ -37,7 +36,7 @@ export const BpmnEditor = ({
     const [showDisplayMenu, setShowDisplayMenu]     = useState(false);
     const [showToolsMenu, setShowToolsMenu]         = useState(false);
     const [showDownloadMenu, setShowDownloadMenu]   = useState(false); // read-only download
-    const [showSidebar, setShowSidebar] = useState(true);
+    const [isPanelOpen, setIsPanelOpen] = useState(false);
 
     // ─── Refs ─────────────────────────────────────────────────────────────────
     const fileInputRef          = useRef(null);
@@ -201,12 +200,12 @@ export const BpmnEditor = ({
 
     const handleZoomFit = () => modelerMethodsRef.current?.fitAndCenter?.();
 
-    // ─── Panel toggles ────────────────────────────────────────────────────────
-    const handlePropertiesClick = () =>
-        setExpandedPanel(prev => (prev === "properties" ? null : "properties"));
-
-    const handleValidationClick = () =>
-        setExpandedPanel(prev => (prev === "validation" ? null : "validation"));
+    // ─── Panel tab handler ────────────────────────────────────────────────────
+    // Clicking a tab activates it AND opens the panel if collapsed.
+    const handleTabClick = (tab) => {
+        setActiveTab(tab);
+        setIsPanelOpen(true);
+    };
 
     // ─── Filename helper ──────────────────────────────────────────────────────
     const sanitizeFilename = (name) => name?.trim() || "diagram";
@@ -434,23 +433,6 @@ export const BpmnEditor = ({
         <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
         </svg>
-    );
-    const IconPanelToggle = ({ open }) => (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <rect x="1" y="1" width="14" height="14" rx="2.5"
-            stroke="currentColor" strokeWidth="1.5"/>
-        <line x1="10.5" y1="1.5" x2="10.5" y2="14.5"
-            stroke="currentColor" strokeWidth="1.5"/>
-        {open ? (
-        <polyline points="7,5 5,8 7,11"
-                    stroke="currentColor" strokeWidth="1.5"
-                    strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-        ) : (
-        <polyline points="5,5 7,8 5,11"
-                    stroke="currentColor" strokeWidth="1.5"
-                    strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-        )}
-    </svg>
     );
 
     // ─── Render ───────────────────────────────────────────────────────────────
@@ -741,97 +723,123 @@ export const BpmnEditor = ({
                         isReadOnly={isReadOnly}
                         onTaskAction={onTaskAction}
                     />
-                    {/* Sidebar edge toggle tab */}
-                    {!isSimulationMode && (
-                    <button
-                        type="button"
-                        className={`bpmn-sidebar-edge-btn ${showSidebar ? "panel-open" : "panel-closed"}`}
-                        onClick={() => setShowSidebar(prev => !prev)}
-                        disabled={isLoading}
-                        title={showSidebar ? "Hide Panel" : "Show Panel"}
-                    >
-                        <IconPanelToggle open={showSidebar} />
-                    </button>
-                    )}
                 </div>
 
-                {/* Right Sidebar */}
+                {/* ═══════════════════════ BOTTOM DOCKED PANEL ═══════════════════
+                    Tabs for Properties + Validation. Sits below the canvas so the
+                    canvas gets full width. `#js-properties-panel` is kept mounted
+                    at all times (only display-toggled) because bpmn-js's
+                    propertiesPanel.attachTo() binding requires the node to persist. */}
                 {!isSimulationMode && (
-                    <div className={`bpmn-right-sidebar ${showSidebar ? "" : "sidebar-hidden"}`}>
-
-                        {/* Properties header */}
-                        <div className="panel-header" onClick={handlePropertiesClick}>
-                            <h4>Properties Panel</h4>
-                            <img
-                                src={downIcon}
-                                className={`panel-arrow ${expandedPanel === "properties" ? "rotated" : ""}`}
-                                alt="toggle properties"
-                            />
-                        </div>
-
-                        {/* Properties content */}
-                        <div className={`bpmn-properties-content ${expandedPanel === "properties" ? "expanded" : "collapsed"}`}>
-                            <div id="js-properties-panel" className="panel-content" />
-                        </div>
-
-                        {/* Validation header */}
-                        <div className="validation-title" onClick={handleValidationClick}>
-                            <h4>Validation</h4>
-                            <img
-                                src={downIcon}
-                                className={`validation-arrow ${expandedPanel === "validation" ? "rotated" : ""}`}
-                                alt="toggle validation"
-                            />
-                        </div>
-
-                        {/* Validation content */}
-                        <div className={`bpmn-validation-content ${expandedPanel === "validation" ? "expanded" : "collapsed"}`}>
-                            <div className="validation-content">
-                                {validationResults.errors.length === 0 && (
-                                    <div className="validation-errors">
-                                        <h5 className="no-error-content">No Validation Errors!</h5>
-                                    </div>
-                                )}
-
-                                {validationResults.errors.length > 0 && (
-                                    <div className="validation-errors">
-                                        <h5 className="error-title">Errors</h5>
-                                        {validationResults.errors.map((e, i) => (
-                                            <div
-                                                key={`error-${i}`}
-                                                className="validation-item error"
-                                                onClick={() => modelerMethodsRef.current?.focusElement(e.elementId)}
-                                            >
-                                                {e.message}
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
-
-                                {Object.keys(groupedWarnings).length > 0 && (
-                                    <div className="validation-warnings">
-                                        <h5 className="warning-title">Warnings</h5>
-                                        {Object.entries(groupedWarnings).map(([ruleId, items]) => (
-                                            <div key={ruleId} className="validation-group">
-                                                <div className="validation-group-title">
-                                                    ⚠ {items.length} issue(s): {items[0].message}
-                                                </div>
-                                                <div className="validation-group-items">
-                                                    {items.map((w, i) => (
-                                                        <div
-                                                            key={`${ruleId}-${i}`}
-                                                            className="validation-item warning"
-                                                            onClick={() => modelerMethodsRef.current?.focusElement(w.elementId)}
-                                                        >
-                                                            {w.elementId || "Global"}
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
+                    <div className={`bpmn-bottom-panel ${isPanelOpen ? "" : "collapsed"}` }>
+                        <div className="bpmn-panel-tabs"  onClick={() => setIsPanelOpen(prev => !prev)}>
+                            <div className="bpmn-panel-tabs-group">
+                                <button
+                                    type="button"
+                                    className={`bpmn-panel-tab ${activeTab === "properties" ? "active" : ""}`}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleTabClick("properties");
+                                    }}
+                                >
+                                    Properties
+                                </button>
+                                <button
+                                    type="button"
+                                    className={`bpmn-panel-tab ${activeTab === "validation" ? "active" : ""}`}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleTabClick("validation");
+                                    }}
+                                >
+                                    Validation
+                                    {(validationResults.errors.length + Object.keys(groupedWarnings).length) > 0 && (
+                                        <span className={`bpmn-tab-badge ${validationResults.errors.length > 0 ? "error" : "warning"}`}>
+                                            {validationResults.errors.length + Object.keys(groupedWarnings).length}
+                                        </span>
+                                    )}
+                                </button>
                             </div>
+                            <button
+                                type="button"
+                                className="bpmn-panel-collapse-btn"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setIsPanelOpen(prev => !prev);
+                                }}
+                                title={isPanelOpen ? "Hide panel" : "Show panel"}
+                            >
+                                <svg width="12" height="12" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                                    <polyline
+                                        points={isPanelOpen ? "4,6 8,10 12,6" : "4,10 8,6 12,10"}
+                                        stroke="currentColor" strokeWidth="1.5"
+                                        strokeLinecap="round" strokeLinejoin="round"
+                                    />
+                                </svg>
+                                <span>{isPanelOpen ? "Hide panel" : "Show panel"}</span>
+                            </button>
+                        </div>
+
+                        <div className="bpmn-panel-content">
+                            {/* Properties pane — display-toggled, not unmounted */}
+                            <div
+                                className="bpmn-panel-pane properties-pane"
+                                style={{ display: activeTab === "properties" ? "block" : "none" }}
+                            >
+                                <div id="js-properties-panel" className="panel-content" />
+                            </div>
+
+                            {/* Validation pane — safe to unmount, no external bindings */}
+                            {activeTab === "validation" && (
+                                <div className="bpmn-panel-pane validation-pane">
+                                    <div className="validation-content">
+                                        {validationResults.errors.length === 0 && (
+                                            <div className="validation-errors">
+                                                <h5 className="no-error-content">No Validation Errors!</h5>
+                                            </div>
+                                        )}
+
+                                        {validationResults.errors.length > 0 && (
+                                            <div className="validation-errors">
+                                                <h5 className="error-title">Errors</h5>
+                                                {validationResults.errors.map((e, i) => (
+                                                    <div
+                                                        key={`error-${i}`}
+                                                        className="validation-item error"
+                                                        onClick={() => modelerMethodsRef.current?.focusElement(e.elementId)}
+                                                    >
+                                                        {e.message}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+
+                                        {Object.keys(groupedWarnings).length > 0 && (
+                                            <div className="validation-warnings">
+                                                <h5 className="warning-title">Warnings</h5>
+                                                {Object.entries(groupedWarnings).map(([ruleId, items]) => (
+                                                    <div key={ruleId} className="validation-group">
+                                                        <div className="validation-group-title">
+                                                            ⚠ {items.length} issue(s): {items[0].message}
+                                                        </div>
+                                                        <div className="validation-group-items">
+                                                            {items.map((w, i) => (
+                                                                <div
+                                                                    key={`${ruleId}-${i}`}
+                                                                    className="validation-item warning"
+                                                                    onClick={() => modelerMethodsRef.current?.focusElement(w.elementId)}
+                                                                >
+                                                                    {w.elementId || "Global"}
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </div>
                 )}

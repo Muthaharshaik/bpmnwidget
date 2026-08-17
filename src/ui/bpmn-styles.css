@@ -38,7 +38,8 @@
     overflow: hidden;
 }
 
-.bpmn-editor-container.readonly-mode .bpmn-right-sidebar {
+.bpmn-editor-container.readonly-mode .bpmn-right-sidebar,
+.bpmn-editor-container.readonly-mode .bpmn-bottom-panel {
     display: none !important;
 }
 /* ===================================
@@ -278,6 +279,7 @@
 
 .bpmn-workspace {
     display: flex;
+    flex-direction: column;
     flex: 1;
     min-height: 0; /* important for flex + scroll */
 }
@@ -2352,4 +2354,147 @@
 /* Hide sidebar completely in read-only mode */
 .readonly-mode .bpmn-right-sidebar {
     display: none;
+}
+/* =====================================================================
+   BOTTOM DOCKED PANEL — Properties + Validation tabs
+   (Replaces the old right-side accordion sidebar.)
+   ===================================================================== */
+
+.bpmn-bottom-panel {
+    flex: 0 0 auto;
+    height: 280px;
+    background: #ffffff;
+    border-top: 1px solid #d0d0d0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    transition: height 0.2s ease;
+}
+
+.bpmn-bottom-panel.collapsed {
+    height: 40px;
+}
+
+/* Tab bar (top row of the panel) */
+.bpmn-panel-tabs {
+    flex: 0 0 40px;
+    display: flex;
+    align-items: stretch;
+    justify-content: space-between;
+    padding: 0 8px;
+    background: #ffffff;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.bpmn-panel-tabs-group {
+    display: flex;
+    gap: 2px;
+    height: 100%;
+}
+
+.bpmn-panel-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0 12px;
+    height: 100%;
+    font-size: 13px;
+    color: #666;
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.bpmn-panel-tab:hover {
+    color: #2d2d2d;
+}
+
+.bpmn-panel-tab.active {
+    color: #2d2d2d;
+    font-weight: 500;
+    border-bottom-color: #185FA5;
+}
+
+/* Count badge on Validation tab */
+.bpmn-tab-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 18px;
+    height: 16px;
+    padding: 0 5px;
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: 500;
+    line-height: 1;
+}
+
+.bpmn-tab-badge.error {
+    background: #FCEBEB;
+    color: #A32D2D;
+}
+
+.bpmn-tab-badge.warning {
+    background: #FAEEDA;
+    color: #854F0B;
+}
+
+/* Hide / Show panel chip */
+.bpmn-panel-collapse-btn {
+    align-self: center;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 5px 10px;
+    background: transparent;
+    border: 0.5px solid #d0d0d0;
+    border-radius: 6px;
+    color: #666;
+    font-size: 12px;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.bpmn-panel-collapse-btn:hover {
+    background: #f0f5ff;
+    color: #185FA5;
+    border-color: #185FA5;
+}
+
+/* Content area (below tab bar) */
+.bpmn-panel-content {
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    position: relative;
+}
+
+.bpmn-bottom-panel.collapsed .bpmn-panel-content {
+    display: none;
+}
+
+/* Individual panes (Properties / Validation) */
+.bpmn-panel-pane {
+    height: 100%;
+    overflow: auto;
+}
+
+.bpmn-panel-pane.validation-pane {
+    padding: 8px 12px;
+}
+
+/* Override earlier .panel-content/.validation-content max-height rules that
+   were sized for the old full-height right sidebar. Inside the bottom panel
+   the pane wrapper owns scrolling, so inner containers should flow freely. */
+.bpmn-bottom-panel .panel-content,
+.bpmn-bottom-panel .validation-content {
+    max-height: none;
+    height: auto;
+    overflow: visible;
+    margin: 0;
 }
