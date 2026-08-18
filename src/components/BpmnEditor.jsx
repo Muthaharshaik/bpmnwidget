@@ -1,8 +1,8 @@
 import { createElement, useState, useRef, useEffect, useCallback } from "react";
 import BpmnModelerComponent from "./BpmnModeler";
 import { BpmnDiff } from "./BpmnDiff";
-import companyLogo from "../assets/LCL-brand-clr-logo.png";
-import watermarkImg from "../assets/LCL-brand-clr-icon.png";
+import companyLogo from "../assets/Marico_LOGO_11.png";
+import watermarkImg from "../assets/Marico_LOGO_11.png";
 import jsPDF from "jspdf";
 import { applyBottleneckColors, clearBottleneckColors } from "../utils/bottleneckAnalyzer";
 
@@ -312,7 +312,7 @@ export const BpmnEditor = ({
                     canvas.getContext("2d").drawImage(img, 0, 0);
                     const imgData = canvas.toDataURL("image/png");
 
-                    if (logoImgRef.current) pdf.addImage(logoImgRef.current, "PNG", 10, 10, 30, 10);
+                    if (logoImgRef.current) pdf.addImage(logoImgRef.current, "PNG", 10, 10, 18.4, 14.6);
 
                     pdf.setFontSize(14);
                     pdf.setFont("helvetica", "bold");
