@@ -1,5 +1,6 @@
 import { useEffect, useRef, useCallback, createElement } from "react";
 import BpmnModeler from "bpmn-js/lib/Modeler";
+import { getBBox } from "diagram-js/lib/util/Elements";
 import { CreateAppendAnythingModule } from "bpmn-js-create-append-anything";
 import ColorPickerModule from "bpmn-js-color-picker";
 import { validateDiagram as runValidation } from "../validations";
@@ -478,8 +479,41 @@ export const BpmnModelerComponent = ({
     }, []);
 
     /**
+     * Bring an element into view without disturbing the diagram more than
+     * necessary:
+     *   • already comfortably visible → the canvas does not move at all
+     *   • otherwise                   → the element is centered in the viewport
+     *
+     * canvas.scrollToElement() is deliberately not used here: it pushes the
+     * element into the top-left corner whenever the padding does not fit the
+     * viewport, which happens on the short canvas left by the open bottom panel.
+     */
+    const revealElement = useCallback((canvas, element, forceCenter) => {
+        const viewbox = canvas.viewbox();
+        const zoom = canvas.zoom();
+        const bbox = getBBox(element);
+
+        // A margin so the element never sits right on the viewport edge
+        const padX = Math.min(80, viewbox.width * 0.15);
+        const padY = Math.min(80, viewbox.height * 0.15);
+
+        const isComfortablyVisible =
+            bbox.x >= viewbox.x + padX &&
+            bbox.y >= viewbox.y + padY &&
+            bbox.x + bbox.width <= viewbox.x + viewbox.width - padX &&
+            bbox.y + bbox.height <= viewbox.y + viewbox.height - padY;
+
+        if (!forceCenter && isComfortablyVisible) return;
+
+        const dx = bbox.x + bbox.width / 2 - (viewbox.x + viewbox.width / 2);
+        const dy = bbox.y + bbox.height / 2 - (viewbox.y + viewbox.height / 2);
+
+        canvas.scroll({ dx: -dx * zoom, dy: -dy * zoom });
+    }, []);
+
+    /**
      * Reveal an element on the canvas: drill into the right root (sub process /
-     * pool), scroll it into view, select it and keep it highlighted until the
+     * pool), bring it into view, select it and keep it highlighted until the
      * next focus. Used when clicking a validation error / warning.
      */
     const focusElement = useCallback(elementId => {
@@ -494,16 +528,23 @@ export const BpmnModelerComponent = ({
 
         clearFocus();
 
-        // Switches the root element when needed and only scrolls when the
-        // element sits outside the current viewport.
-        canvas.scrollToElement(element, 180);
+        // The element may live on another plane (sub process, pool)
+        const root = canvas.findRoot(element);
+        const rootChanged = root && root !== canvas.getRootElement();
+        if (rootChanged) {
+            canvas.setRootElement(root);
+        }
+
+        if (root !== element) {
+            revealElement(canvas, element, rootChanged);
+        }
 
         focusedElementRef.current = elementId;
         canvas.addMarker(elementId, "bpmn-focus");
 
         // Selecting also opens the properties panel on that element.
         selection?.select(element);
-    }, [clearFocus]);
+    }, [clearFocus, revealElement]);
 
     /**
      * Export current diagram as SVG with full diagram bounds
