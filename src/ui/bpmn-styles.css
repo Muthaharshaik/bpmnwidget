@@ -317,12 +317,30 @@
    =================================== */
 
 .validation-item {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
     padding: 6px 8px;
     margin-bottom: 6px;
     border-radius: 4px;
     cursor: pointer;
     line-height: 1.4;
-    transition: background-color 0.15s ease;
+    transition: background-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.validation-item-message {
+    flex: 1;
+}
+
+.validation-item-element {
+    font-weight: 600;
+}
+
+.validation-item-type {
+    font-size: 11px;
+    font-weight: 500;
+    opacity: 0.75;
+    white-space: nowrap;
 }
 
 .validation-content {
@@ -343,6 +361,20 @@
 
 .validation-item:hover {
     filter: brightness(0.97);
+}
+
+/* Currently revealed on the canvas — ring picks up the row's own severity color */
+.validation-item.selected {
+    box-shadow: 0 0 0 2px currentColor inset;
+    filter: brightness(0.97);
+}
+
+.validation-item.selected.error {
+    border-left-color: #b00020;
+}
+
+.validation-item.selected.warning {
+    border-left-color: #9c6500;
 }
 
 .bpmn-modeler-container {
@@ -681,19 +713,36 @@
    BPMN Validation Markers (Canvas)
    =================================== */
 
-.bpmn-error .djs-outline {
+/* Only the element revealed from the validation panel is highlighted on the
+   canvas. Error / warning markers stay dormant (diagram-js keeps .djs-outline
+   hidden until an element is selected) so the diagram is not painted red and
+   yellow on its own. */
+.bpmn-focus .djs-outline {
+    visibility: visible !important;
+}
+
+/* .djs-element qualifier keeps these above the generic `.selected` rules above */
+.djs-element.bpmn-error .djs-outline {
     stroke: #d93025 !important;
     stroke-width: 3px !important;
 }
 
-.bpmn-warning .djs-outline {
+.djs-element.bpmn-warning .djs-outline {
     stroke: #f9ab00 !important;
     stroke-width: 3px !important;
 }
 
-.bpmn-focus .djs-outline {
-    stroke: #1a73e8 !important;
+/* Element revealed by clicking an error / warning — wins over error/warning */
+.djs-element.bpmn-focus .djs-outline {
+    stroke: #f9ab00 !important;
     stroke-width: 3px !important;
+    animation: bpmn-focus-pulse 0.9s ease-out 3;
+}
+
+@keyframes bpmn-focus-pulse {
+    0%   { stroke-opacity: 1;   stroke-width: 3px; }
+    50%  { stroke-opacity: 0.4; stroke-width: 7px; }
+    100% { stroke-opacity: 1;   stroke-width: 3px; }
 }
 
 .bpmn-widget .djs-palette.two-column.open {

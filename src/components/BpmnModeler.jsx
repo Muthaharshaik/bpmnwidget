@@ -62,6 +62,8 @@ export const BpmnModelerComponent = ({
     const modelerRef = useRef(null);
     const lastImportedXmlRef = useRef(null);
     const onTaskActionRef = useRef(onTaskAction);
+    // Element currently highlighted from the validation panel
+    const focusedElementRef = useRef(null);
 
     /**
      * Token simulation hook
@@ -188,6 +190,7 @@ export const BpmnModelerComponent = ({
                         exportSVG,
                         validateDiagram,
                         focusElement,
+                        clearFocus,
                         applyValidationMarkers,
                         fitAndCenter: () => fitAndCenter(modelerRef.current),
                         getModeler: () => modelerRef.current,
@@ -459,29 +462,48 @@ export const BpmnModelerComponent = ({
         });
     }, []);
 
+    /**
+     * Remove the highlight left behind by the last focusElement call.
+     */
+    const clearFocus = useCallback(() => {
+        const elementId = focusedElementRef.current;
+        if (!elementId || !modelerRef.current) return;
+
+        focusedElementRef.current = null;
+
+        const canvas = modelerRef.current.get("canvas");
+        if (canvas.findRoot(elementId)) {
+            canvas.removeMarker(elementId, "bpmn-focus");
+        }
+    }, []);
+
+    /**
+     * Reveal an element on the canvas: drill into the right root (sub process /
+     * pool), scroll it into view, select it and keep it highlighted until the
+     * next focus. Used when clicking a validation error / warning.
+     */
     const focusElement = useCallback(elementId => {
         if (!modelerRef.current || !elementId) return;
 
         const canvas = modelerRef.current.get("canvas");
         const elementRegistry = modelerRef.current.get("elementRegistry");
+        const selection = modelerRef.current.get("selection");
 
         const element = elementRegistry.get(elementId);
         if (!element) return;
 
-        const viewbox = canvas.viewbox();
+        clearFocus();
 
-        canvas.viewbox({
-            x: element.x + element.width / 2 - viewbox.width / 2,
-            y: element.y + element.height / 2 - viewbox.height / 2,
-            width: viewbox.width,
-            height: viewbox.height
-        });
+        // Switches the root element when needed and only scrolls when the
+        // element sits outside the current viewport.
+        canvas.scrollToElement(element, 180);
 
+        focusedElementRef.current = elementId;
         canvas.addMarker(elementId, "bpmn-focus");
-        setTimeout(() => {
-            canvas.removeMarker(elementId, "bpmn-focus");
-        }, 1200);
-    }, []);
+
+        // Selecting also opens the properties panel on that element.
+        selection?.select(element);
+    }, [clearFocus]);
 
     /**
      * Export current diagram as SVG with full diagram bounds

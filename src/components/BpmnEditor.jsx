@@ -25,6 +25,7 @@ export const BpmnEditor = ({
     const [showKeyboardShortcuts, setShowKeyboardShortcuts] = useState(false);
     const [isSimulationMode, setIsSimulationMode]   = useState(false);
     const [validationResults, setValidationResults] = useState({ errors: [], warnings: [] });
+    const [selectedIssueKey, setSelectedIssueKey]   = useState(null);
     const [isBottleneckMode, setIsBottleneckMode]   = useState(false);
     const [activeTab, setActiveTab]                 = useState("properties");
     const [isTaskDataApplied, setIsTaskDataApplied] = useState(false);
@@ -374,6 +375,59 @@ export const BpmnEditor = ({
         acc[w.ruleId].push(w);
         return acc;
     }, {});
+
+    // ─── Validation issue → canvas ────────────────────────────────────────────
+    const issueKey = (issue, severity) =>
+        `${severity}-${issue.ruleId}-${issue.elementId || "global"}`;
+
+    /** Label shown in the panel: element name, readable type, or the diagram itself */
+    const issueLabel = issue => {
+        if (!issue.elementId) return "Whole diagram";
+        return issue.elementName || issue.elementType || issue.elementId;
+    };
+
+    const handleIssueClick = (issue, severity) => {
+        const key = issueKey(issue, severity);
+
+        // Clicking the selected issue again clears the highlight
+        if (selectedIssueKey === key) {
+            setSelectedIssueKey(null);
+            modelerMethodsRef.current?.clearFocus?.();
+            return;
+        }
+
+        setSelectedIssueKey(key);
+
+        if (issue.elementId) {
+            modelerMethodsRef.current?.focusElement(issue.elementId);
+        } else {
+            modelerMethodsRef.current?.clearFocus?.();
+        }
+    };
+
+    // Hiding the panel / leaving the Validation tab drops the canvas highlight
+    useEffect(() => {
+        if (!selectedIssueKey) return;
+        if (isPanelOpen && !isSimulationMode && activeTab === "validation") return;
+
+        setSelectedIssueKey(null);
+        modelerMethodsRef.current?.clearFocus?.();
+    }, [isPanelOpen, activeTab, isSimulationMode, selectedIssueKey]);
+
+    // Drop the selection (and its canvas highlight) once the issue is resolved
+    useEffect(() => {
+        if (!selectedIssueKey) return;
+
+        const stillOpen = [
+            ...validationResults.errors.map(e => issueKey(e, "error")),
+            ...validationResults.warnings.map(w => issueKey(w, "warning"))
+        ].includes(selectedIssueKey);
+
+        if (!stillOpen) {
+            setSelectedIssueKey(null);
+            modelerMethodsRef.current?.clearFocus?.();
+        }
+    }, [validationResults, selectedIssueKey]);
 
     // ─── SVG icons (inline — no asset imports needed) ─────────────────────────
     const IconZoomOut = () => (
@@ -805,10 +859,14 @@ export const BpmnEditor = ({
                                                 {validationResults.errors.map((e, i) => (
                                                     <div
                                                         key={`error-${i}`}
-                                                        className="validation-item error"
-                                                        onClick={() => modelerMethodsRef.current?.focusElement(e.elementId)}
+                                                        className={`validation-item error ${selectedIssueKey === issueKey(e, "error") ? "selected" : ""}`}
+                                                        onClick={() => handleIssueClick(e, "error")}
+                                                        title={e.elementId ? `${issueLabel(e)} (${e.elementId})` : e.message}
                                                     >
-                                                        {e.message}
+                                                        <span className="validation-item-message">{e.message}</span>
+                                                        {e.elementId && (
+                                                            <span className="validation-item-element">{issueLabel(e)}</span>
+                                                        )}
                                                     </div>
                                                 ))}
                                             </div>
@@ -826,10 +884,14 @@ export const BpmnEditor = ({
                                                             {items.map((w, i) => (
                                                                 <div
                                                                     key={`${ruleId}-${i}`}
-                                                                    className="validation-item warning"
-                                                                    onClick={() => modelerMethodsRef.current?.focusElement(w.elementId)}
+                                                                    className={`validation-item warning ${selectedIssueKey === issueKey(w, "warning") ? "selected" : ""}`}
+                                                                    onClick={() => handleIssueClick(w, "warning")}
+                                                                    title={w.elementId ? `${issueLabel(w)} (${w.elementId})` : w.message}
                                                                 >
-                                                                    {w.elementId || "Global"}
+                                                                    <span className="validation-item-element">{issueLabel(w)}</span>
+                                                                    {w.elementType && !issueLabel(w).includes(w.elementType) && (
+                                                                        <span className="validation-item-type">{w.elementType}</span>
+                                                                    )}
                                                                 </div>
                                                             ))}
                                                         </div>

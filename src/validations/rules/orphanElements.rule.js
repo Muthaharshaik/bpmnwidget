@@ -6,7 +6,8 @@ import {
     getIncoming,
     getOutgoing,
     isType,
-    isBoundaryEvent
+    isBoundaryEvent,
+    isLabel
 } from "../helpers";
 
 export function orphanElementsRule(modeler) {
@@ -14,6 +15,7 @@ export function orphanElementsRule(modeler) {
     const errors = [];
 
     elements.forEach(element => {
+        if (isLabel(element)) return;
         if (!isFlowNode(element)) return;
         if (isType(element, "bpmn:StartEvent")) return;
         if (isType(element, "bpmn:EndEvent")) return;

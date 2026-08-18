@@ -1,12 +1,13 @@
 // validations/rules/taskOutgoing.rule.js
 
-import { getAllElements, isTask, getOutgoing } from "../helpers";
+import { getAllElements, isTask, getOutgoing, isLabel } from "../helpers";
 
 export function taskMultipleOutgoingRule(modeler) {
     const elements = getAllElements(modeler);
     const warnings = [];
 
     elements.forEach(element => {
+        if (isLabel(element)) return;
         if (!isTask(element)) return;
 
         const outgoing = getOutgoing(element)
