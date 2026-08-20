@@ -13,6 +13,7 @@ import "./ui/bpmn-styles.css";
  * - bpmnXML: EditableValue<string> - The BPMN XML attribute from entity
  * - onSaveAction: ActionValue - Mendix action to execute on save
  * - onCancelAction: ActionValue - Mendix action to execute on cancel
+ * - readOnly: boolean - Forces the diagram into read-only mode, same effect as a lock by another user
  * - class: string - CSS class from Mendix
  * - style: object - Style object from Mendix
  * - tabIndex: number - Tab index for accessibility
@@ -30,6 +31,7 @@ export function Bpmnwidget(props) {
         lockedUserEmail,
         selectedTaskId,
         onTaskClickAction,
+        readOnly,
         class: className,
         style,
         tabIndex
@@ -57,7 +59,9 @@ export function Bpmnwidget(props) {
     }, [currentUserEmail?.value, currentUserEmail?.status, 
         lockedUserEmail?.value, lockedUserEmail?.status]);
 
-    
+    // Read-only when the widget is configured read-only OR the diagram is locked by another user
+    const isReadOnly = useMemo(() => readOnly === true || isLockedByAnotherUser, [readOnly, isLockedByAnotherUser]);
+
     /**
      * Get the current BPMN XML value from Mendix attribute
      * useMemo ensures we only recompute when bpmnXML changes
@@ -171,7 +175,7 @@ export function Bpmnwidget(props) {
                 bpmnFile={currentBpmnName}
                 onTasksExtracted={handleTasksExtracted}
                 taskDataJson={taskDataJson?.value}
-                isReadOnly={isLockedByAnotherUser}
+                isReadOnly={isReadOnly}
                 onTaskAction={handleTaskAction}
             />
         </div>

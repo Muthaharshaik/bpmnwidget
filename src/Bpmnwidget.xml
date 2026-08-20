@@ -35,7 +35,7 @@
                 </attributeTypes>
             </property>
 
-            <property key="currentUserEmail" type="expression" required="true">
+            <property key="currentUserEmail" type="expression" required="false">
                 <caption>Current User Email</caption>
                 <description>Current user email</description>
                 <returnType type="String"/>
@@ -85,6 +85,14 @@
                 <description>Action triggered when a task is clicked in the diagram. Use Selected Task ID attribute to get the task ID.</description>
             </property>
 
+        </propertyGroup>
+
+        <!--Display-->
+        <propertyGroup caption="Display">
+            <property key="readOnly" type="boolean" defaultValue="false">
+                <caption>Read Only</caption>
+                <description>If true, the diagram cannot be edited</description>
+            </property>
         </propertyGroup>
 
     </properties>
