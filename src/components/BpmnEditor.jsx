@@ -1,6 +1,5 @@
 import { createElement, useState, useRef, useEffect, useCallback } from "react";
 import BpmnModelerComponent from "./BpmnModeler";
-import { BpmnDiff } from "./BpmnDiff";
 import companyLogo from "../assets/Marico_LOGO_11.png";
 import watermarkImg from "../assets/Marico_LOGO_11.png";
 import jsPDF from "jspdf";
@@ -14,7 +13,8 @@ export const BpmnEditor = ({
     onTasksExtracted,
     taskDataJson,
     isReadOnly,
-    onTaskAction
+    onTaskAction,
+    onCompare
 }) => {
     // ─── State ────────────────────────────────────────────────────────────────
     const [error, setError]                         = useState(null);
@@ -31,7 +31,6 @@ export const BpmnEditor = ({
     const [isTaskDataApplied, setIsTaskDataApplied] = useState(false);
     const [showComments, setShowComments]           = useState(false);
     const [isTogglingComments, setIsTogglingComments] = useState(false);
-    const [showDiff, setShowDiff]                   = useState(false);
 
     // dropdown visibility
     const [showDisplayMenu, setShowDisplayMenu]     = useState(false);
@@ -501,7 +500,7 @@ export const BpmnEditor = ({
                     <div className="bpmn-toolbar-left">
 
                         {/* Title */}
-                        <span className="bpmn-title">BPMN Diagram</span>
+                        <span className="bpmn-title">{bpmnFile}</span>
                         {isReadOnly && <span className="bpmn-readonly-badge">Read-Only</span>}
 
                         <div className="bpmn-toolbar-divider" />
@@ -623,15 +622,22 @@ export const BpmnEditor = ({
                                                 {showComments ? "Hide Comments" : "Show Comments"}
                                             </div>
 
+                                            {/* Hands over to Mendix: the configured
+                                                microflow opens the comparison page.
+                                                Shown greyed out when the On Show
+                                                Comparison action is not configured, so
+                                                it is obvious what is missing. */}
                                             <div
-                                                className="bpmn-menu-item"
+                                                className={`bpmn-menu-item ${onCompare ? "" : "disabled"}`}
+                                                title={onCompare ? "" : "Configure the On Show Comparison action in Studio Pro"}
                                                 onClick={() => {
-                                                    setShowDiff(true);
+                                                    if (!onCompare) return;
                                                     setShowDisplayMenu(false);
+                                                    onCompare();
                                                 }}
                                             >
                                                 <IconCompare />
-                                                Compare Versions
+                                                Show Comparison
                                             </div>
                                         </div>
                                     )}
@@ -948,13 +954,6 @@ export const BpmnEditor = ({
                 </div>
             )}
 
-            {/* ══════════════════════════ DIFF VIEWER ════════════════════════ */}
-            {showDiff && (
-                <BpmnDiff
-                    onClose={() => setShowDiff(false)}
-                    currentXml={currentXml}
-                />
-            )}
         </div>
     );
 };

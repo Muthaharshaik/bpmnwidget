@@ -973,6 +973,16 @@
     color: #3b82f6;
 }
 
+.bpmn-widget .bpmn-menu-item.disabled {
+    color: #aaa;
+    cursor: not-allowed;
+}
+
+.bpmn-widget .bpmn-menu-item.disabled:hover {
+    background: transparent;
+    color: #aaa;
+}
+
 /* Cancel / Save buttons */
 .bpmn-widget .bpmn-btn-secondary {
     padding: 0 14px;
@@ -2217,31 +2227,85 @@
 }
 
 
+/* Compare mode fills the widget's own box on the comparison page, so anything
+   Mendix places around the widget (dropdown, buttons, breadcrumbs) stays usable.
+   Height mirrors .bpmn-editor-container for consistent page sizing. */
 .bpmn-diff-container {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: white;
-    z-index: 10000;
+    position: relative;
     display: flex;
     flex-direction: column;
+    width: 100%;
+    height: calc(100vh - 180px);
+    min-height: 400px;
+    background: white;
+    border: 1px solid #d0d0d0;
+    border-radius: 4px;
+    overflow: hidden;
 }
 
 .diff-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 16px 24px;
+    gap: 16px;
+    padding: 12px 24px;
     border-bottom: 1px solid #ddd;
+    background: #e6eef8;
 }
 
-.diff-close-btn {
-    font-size: 32px;
-    border: none;
-    background: none;
+.diff-header h2 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.diff-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    font-size: 12px;
+    color: #555;
+}
+
+.diff-legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+}
+
+.diff-legend .dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+    display: inline-block;
+}
+
+.diff-legend .dot.added   { background: #52b415; }
+.diff-legend .dot.removed { background: #cc0000; }
+.diff-legend .dot.changed { background: #ffc800; }
+.diff-legend .dot.layout  { background: #0d4f8b; }
+
+.diff-sync-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: #555;
+    white-space: nowrap;
     cursor: pointer;
+}
+
+.diff-error-banner {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 24px;
+    background: #fdecea;
+    color: #b3261e;
+    border-bottom: 1px solid #f5c6c2;
+    font-size: 13px;
 }
 
 .diff-viewers {
@@ -2251,7 +2315,9 @@
 }
 
 .diff-viewer-wrapper {
+    position: relative;
     flex: 1;
+    min-width: 0;
     display: flex;
     flex-direction: column;
     border-right: 2px solid #ddd;
@@ -2275,17 +2341,22 @@
     color: #666;
 }
 
-.choose-file-btn {
-    padding: 6px 12px;
-    border: 1px solid #ccc;
-    background: white;
-    border-radius: 4px;
-    cursor: pointer;
-}
-
 .diff-canvas {
     flex: 1;
     position: relative;
+    min-height: 0;
+}
+
+.diff-canvas-placeholder {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    transform: translateY(-50%);
+    text-align: center;
+    color: #888;
+    font-size: 13px;
+    pointer-events: none;
 }
 
 .diff-changes-panel {
@@ -2301,7 +2372,15 @@
     overflow: hidden;
 }
 
+.diff-changes-panel.collapsed {
+    max-height: none;
+}
+
 .changes-toggle-btn {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
     width: 100%;
     padding: 12px;
     border: none;
@@ -2311,9 +2390,21 @@
     text-align: left;
 }
 
+.changes-toggle-btn:hover {
+    background: #ebebeb;
+}
+
 .changes-list {
     max-height: 350px;
     overflow-y: auto;
+    border-top: 1px solid #eee;
+}
+
+.changes-empty {
+    margin: 0;
+    padding: 12px;
+    font-size: 13px;
+    color: #666;
 }
 
 .changes-content {
@@ -2336,10 +2427,41 @@
 .change-group-title.layout { color: #0d4f8b; }
 
 .change-item {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    width: 100%;
     padding: 4px 8px;
     margin-bottom: 4px;
+    border: 1px solid transparent;
     border-radius: 3px;
     font-size: 13px;
+    font-family: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.change-item:hover {
+    filter: brightness(0.95);
+}
+
+.change-item.focused {
+    border-color: currentColor;
+}
+
+.change-item-prefix {
+    font-weight: 700;
+}
+
+.change-item-label {
+    flex: 1;
+    word-break: break-word;
+}
+
+.change-item-attrs {
+    font-size: 11px;
+    color: #666;
+    font-style: italic;
 }
 
 .change-item.added {
@@ -2385,6 +2507,12 @@
     stroke: #0d4f8b !important;
     stroke-width: 2px !important;
     stroke-dasharray: 5, 5 !important;
+}
+
+/* Element picked from the list of changes */
+.diff-focused .djs-visual > :nth-child(1) {
+    stroke: #6b21a8 !important;
+    stroke-width: 4px !important;
 }
 
 /* ===================================

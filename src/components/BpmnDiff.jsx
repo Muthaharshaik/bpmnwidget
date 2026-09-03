@@ -1,256 +1,344 @@
-import { useEffect, useRef, useState, createElement} from "react";
+import { useEffect, useRef, useState, useCallback, createElement } from "react";
 import BpmnViewer from "bpmn-js/lib/NavigatedViewer";
 import * as differ from "bpmn-js-differ";
 
-export const BpmnDiff = ({ onClose, currentXml }) => {
-    const [versionA, setVersionA] = useState(null);
-    const [versionB, setVersionB] = useState(null);
-    const [changes, setChanges] = useState(null);
+const DIFF_MARKERS = ["diff-added", "diff-removed", "diff-changed", "diff-layout-changed", "diff-focused"];
+
+/**
+ * Side-by-side comparison of two BPMN diagrams.
+ *
+ * Rendered when the widget's Mode is Compare, which is meant for a dedicated
+ * Mendix comparison page. Both diagrams arrive as Mendix attributes:
+ *   xmlA - BPMN XML, the current version
+ *   xmlB - Compare XML, the version picked in the Mendix dropdown
+ *
+ * There are no editing or closing controls: navigation belongs to the page.
+ */
+export const BpmnDiff = ({ xmlA, xmlB, labelA, labelB, diagramName }) => {
+    const [changes, setChanges]         = useState(null);
     const [viewerAReady, setViewerAReady] = useState(false);
     const [viewerBReady, setViewerBReady] = useState(false);
+    const [loadError, setLoadError]     = useState(null);
+    const [isPanelOpen, setIsPanelOpen] = useState(true);
+    const [syncViews, setSyncViews]     = useState(true);
+    const [focusedId, setFocusedId]     = useState(null);
 
-    
-    const viewerARef = useRef(null);
-    const viewerBRef = useRef(null);
+    const viewerARef    = useRef(null);
+    const viewerBRef    = useRef(null);
     const containerARef = useRef(null);
     const containerBRef = useRef(null);
-    const fileInputARef = useRef(null);
-    const fileInputBRef = useRef(null);
 
-    // Initialize viewers
+    // ─── Create the two viewers once ──────────────────────────────────────────
     useEffect(() => {
         if (!containerARef.current || !containerBRef.current) return;
 
-        viewerARef.current = new BpmnViewer({
-            container: containerARef.current
-        });
-
-        viewerBRef.current = new BpmnViewer({
-            container: containerBRef.current
-        });
+        viewerARef.current = new BpmnViewer({ container: containerARef.current });
+        viewerBRef.current = new BpmnViewer({ container: containerBRef.current });
 
         return () => {
             viewerARef.current?.destroy();
             viewerBRef.current?.destroy();
+            viewerARef.current = null;
+            viewerBRef.current = null;
         };
     }, []);
 
-    // Load and compare diagrams
+    // ─── Import each side whenever its XML changes ────────────────────────────
     useEffect(() => {
-        // ✅ Auto-load current diagram into Version A
-        if (currentXml && !versionA) {
-            setVersionA(currentXml);
-        }
-    }, [currentXml]);
+        if (!xmlA || !viewerARef.current) return;
+        let cancelled = false;
+        setViewerAReady(false);
 
-    useEffect(() => {
-        if (!versionA || !viewerARef.current) return;
-        setViewerAReady(false)
         viewerARef.current
-              .importXML(versionA)
-              .then(() => {
-                viewerARef.current.get('canvas').zoom('fit-viewport');
+            .importXML(xmlA)
+            .then(() => {
+                if (cancelled) return;
+                viewerARef.current.get("canvas").zoom("fit-viewport");
                 setViewerAReady(true);
-              })
-              .catch(err => {
-                console.error("Error Loading version A", err)
-              })
-    },[versionA])
+            })
+            .catch(err => {
+                console.error("Error loading the current diagram", err);
+                if (!cancelled) setLoadError("The current diagram could not be rendered for comparison.");
+            });
+
+        return () => { cancelled = true; };
+    }, [xmlA]);
 
     useEffect(() => {
-        if(!versionB || !viewerBRef.current) return;
-        setViewerBReady(false)
+        if (!xmlB || !viewerBRef.current) return;
+        let cancelled = false;
+        setViewerBReady(false);
+        setLoadError(null);
+
         viewerBRef.current
-              .importXML(versionB)
-              .then(() => {
-                viewerBRef.current.get('canvas').zoom('fit-viewport');
-                setViewerBReady(true); 
-              })
-              .catch(err => {
-                console.error("Error Loading version B", err)
-              })
-    },[versionB])
+            .importXML(xmlB)
+            .then(() => {
+                if (cancelled) return;
+                viewerBRef.current.get("canvas").zoom("fit-viewport");
+                setViewerBReady(true);
+            })
+            .catch(err => {
+                console.error("Error loading the selected version", err);
+                if (!cancelled) setLoadError("The selected version could not be rendered. Its BPMN XML may be invalid.");
+            });
 
-    // Load and compare diagrams
-// Compute diff only when BOTH viewers are ready
-useEffect(() => {
-    if (!viewerAReady || !viewerBReady) return;
+        return () => { cancelled = true; };
+    }, [xmlB]);
 
-    const defsA = viewerARef.current.getDefinitions();
-    const defsB = viewerBRef.current.getDefinitions();
+    // ─── Compute the diff once both sides are rendered ────────────────────────
+    useEffect(() => {
+        if (!viewerAReady || !viewerBReady) return;
 
-    if (!defsA || !defsB) return;
+        const viewerA = viewerARef.current;
+        const viewerB = viewerBRef.current;
+        const defsA   = viewerA.getDefinitions();
+        const defsB   = viewerB.getDefinitions();
+        if (!defsA || !defsB) return;
 
-    // ✅ Clear previous markers before applying new ones
-    const canvasA = viewerARef.current.get('canvas');
-    const canvasB = viewerBRef.current.get('canvas');
-    const registryA = viewerARef.current.get('elementRegistry');
-    const registryB = viewerBRef.current.get('elementRegistry');
+        const canvasA   = viewerA.get("canvas");
+        const canvasB   = viewerB.get("canvas");
+        const registryA = viewerA.get("elementRegistry");
+        const registryB = viewerB.get("elementRegistry");
 
-    // Clear all previous diff markers
-    registryA.getAll().forEach(el => {
-        canvasA.removeMarker(el.id, 'diff-added');
-        canvasA.removeMarker(el.id, 'diff-removed');
-        canvasA.removeMarker(el.id, 'diff-changed');
-        canvasA.removeMarker(el.id, 'diff-layout-changed');
-    });
+        clearMarkers(canvasA, registryA);
+        clearMarkers(canvasB, registryB);
+        setFocusedId(null);
 
-    registryB.getAll().forEach(el => {
-        canvasB.removeMarker(el.id, 'diff-added');
-        canvasB.removeMarker(el.id, 'diff-removed');
-        canvasB.removeMarker(el.id, 'diff-changed');
-        canvasB.removeMarker(el.id, 'diff-layout-changed');
-    });
+        let result;
+        try {
+            result = differ.diff(defsA, defsB);
+        } catch (err) {
+            console.error("Comparison failed", err);
+            setLoadError("The two diagrams could not be compared.");
+            setChanges(null);
+            return;
+        }
 
-    const diffResult = differ.diff(defsA, defsB);
-    setChanges(diffResult);
+        const added         = result._added || {};
+        const removed       = result._removed || {};
+        const changed       = result._changed || {};
+        const layoutChanged = result._layoutChanged || {};
 
-    applyDiffMarkers(viewerARef.current, diffResult, 'old');
-    applyDiffMarkers(viewerBRef.current, diffResult, 'new');
-}, [viewerAReady, viewerBReady]);
+        // Resolve a readable label once, here, so the list can stay dumb.
+        const describe = id => {
+            const element = registryB.get(id) || registryA.get(id);
+            const bo      = element?.businessObject;
+            const type    = (bo?.$type || "Element").replace(/^bpmn:/, "");
+            const name    = bo?.name?.trim();
+            return { id, name: name || null, type, label: name ? `${name} (${type})` : `${type} · ${id}` };
+        };
 
-    const handleFileLoad = (file, setVersion) => {
-        const reader = new FileReader();
-        reader.onload = (e) => setVersion(e.target.result);
-        reader.readAsText(file);
-    };
+        setChanges({
+            added:         Object.keys(added).map(describe),
+            removed:       Object.keys(removed).map(describe),
+            changed:       Object.keys(changed).map(id => ({
+                ...describe(id),
+                attrs: Object.keys(changed[id]?.attrs || {})
+            })),
+            layoutChanged: Object.keys(layoutChanged).map(describe)
+        });
+
+        Object.keys(removed).forEach(id => addMarkerIfPresent(canvasA, registryA, id, "diff-removed"));
+        Object.keys(added).forEach(id => addMarkerIfPresent(canvasB, registryB, id, "diff-added"));
+
+        Object.keys(changed).forEach(id => {
+            addMarkerIfPresent(canvasA, registryA, id, "diff-changed");
+            addMarkerIfPresent(canvasB, registryB, id, "diff-changed");
+        });
+
+        Object.keys(layoutChanged).forEach(id => {
+            addMarkerIfPresent(canvasA, registryA, id, "diff-layout-changed");
+            addMarkerIfPresent(canvasB, registryB, id, "diff-layout-changed");
+        });
+    }, [viewerAReady, viewerBReady]);
+
+    // ─── Keep both canvases showing the same region ───────────────────────────
+    useEffect(() => {
+        if (!syncViews || !viewerAReady || !viewerBReady) return;
+
+        const viewerA = viewerARef.current;
+        const viewerB = viewerBRef.current;
+        const canvasA = viewerA.get("canvas");
+        const canvasB = viewerB.get("canvas");
+
+        // Shared guard: applying a viewbox fires the other canvas's event too.
+        let syncing = false;
+        const mirror = (from, to) => () => {
+            if (syncing) return;
+            syncing = true;
+            try {
+                to.viewbox(from.viewbox());
+            } catch (err) {
+                console.error("Could not synchronise the two views", err);
+            } finally {
+                syncing = false;
+            }
+        };
+
+        const aToB = mirror(canvasA, canvasB);
+        const bToA = mirror(canvasB, canvasA);
+
+        viewerA.get("eventBus").on("canvas.viewbox.changed", aToB);
+        viewerB.get("eventBus").on("canvas.viewbox.changed", bToA);
+
+        return () => {
+            viewerA.get("eventBus").off("canvas.viewbox.changed", aToB);
+            viewerB.get("eventBus").off("canvas.viewbox.changed", bToA);
+        };
+    }, [syncViews, viewerAReady, viewerBReady]);
+
+    // ─── Clicking a change brings that element into view on both sides ────────
+    const handleChangeClick = useCallback(id => {
+        [viewerARef.current, viewerBRef.current].forEach(viewer => {
+            if (!viewer) return;
+            const canvas   = viewer.get("canvas");
+            const registry = viewer.get("elementRegistry");
+
+            if (focusedId) canvas.removeMarker(focusedId, "diff-focused");
+
+            const element = registry.get(id);
+            if (!element) return;
+
+            canvas.addMarker(id, "diff-focused");
+            canvas.scrollToElement?.(element);
+        });
+        setFocusedId(id);
+    }, [focusedId]);
+
+    const total = changes
+        ? changes.added.length + changes.removed.length + changes.changed.length + changes.layoutChanged.length
+        : 0;
 
     return (
         <div className="bpmn-diff-container">
             {/* Header */}
             <div className="diff-header">
-                <h2>BPMN Diagram Comparison</h2>
-                <button className="diff-close-btn" onClick={onClose}>×</button>
+                <h2>{diagramName ? `${diagramName} – Version Comparison` : "Version Comparison"}</h2>
+
+                <div className="diff-legend">
+                    <span className="diff-legend-item"><i className="dot added" />Added</span>
+                    <span className="diff-legend-item"><i className="dot removed" />Removed</span>
+                    <span className="diff-legend-item"><i className="dot changed" />Changed</span>
+                    <span className="diff-legend-item"><i className="dot layout" />Moved</span>
+                </div>
+
+                <label className="diff-sync-toggle">
+                    <input
+                        type="checkbox"
+                        checked={syncViews}
+                        onChange={e => setSyncViews(e.target.checked)}
+                    />
+                    Sync zoom &amp; pan
+                </label>
             </div>
 
-            {/* Viewers Container */}
+            {loadError && (
+                <div className="diff-error-banner">
+                    <span className="bpmn-error-icon">⚠</span>
+                    <span>{loadError}</span>
+                </div>
+            )}
+
+            {/* Viewers */}
             <div className="diff-viewers">
-                {/* Version A */}
                 <div className="diff-viewer-wrapper">
                     <div className="diff-viewer-header">
-                        <span className="version-label">version A (Current)</span>
-                        <span className="version-status">
-                            {versionA ? 'Loaded' : 'Loading...'}
-                        </span>
+                        <span className="version-label">{labelA || "Current"}</span>
+                        {xmlA && !viewerAReady && <span className="version-status">Loading…</span>}
                     </div>
                     <div ref={containerARef} className="diff-canvas" />
+                    {!xmlA && <div className="diff-canvas-placeholder">No diagram to compare.</div>}
                 </div>
 
-                {/* Version B */}
                 <div className="diff-viewer-wrapper">
                     <div className="diff-viewer-header">
-                        <span className="version-label">version B</span>
-                        <input
-                            ref={fileInputBRef}
-                            type="file"
-                            accept=".bpmn,.xml"
-                            style={{ display: 'none' }}
-                            onChange={(e) => handleFileLoad(e.target.files[0], setVersionB)}
-                        />
-                        <button 
-                            className="choose-file-btn"
-                            onClick={() => fileInputBRef.current?.click()}
-                        >
-                            Choose file
-                        </button>
+                        <span className="version-label">{labelB || "Selected version"}</span>
+                        {xmlB && !viewerBReady && <span className="version-status">Loading…</span>}
                     </div>
                     <div ref={containerBRef} className="diff-canvas" />
+                    {!xmlB && <div className="diff-canvas-placeholder">Select a version to compare.</div>}
                 </div>
             </div>
 
-            {/* Changes Panel */}
+            {/* Changes */}
             {changes && (
-                <div className="diff-changes-panel">
-                    <button className="changes-toggle-btn">
-                        List of Changes
+                <div className={`diff-changes-panel ${isPanelOpen ? "" : "collapsed"}`}>
+                    <button
+                        type="button"
+                        className="changes-toggle-btn"
+                        onClick={() => setIsPanelOpen(open => !open)}
+                    >
+                        <span>{total === 0 ? "No differences" : `List of Changes (${total})`}</span>
+                        <span className="changes-caret">{isPanelOpen ? "▾" : "▸"}</span>
                     </button>
-                    <div className="changes-list">
-                        <ChangesList changes={changes} />
-                    </div>
+
+                    {isPanelOpen && (
+                        <div className="changes-list">
+                            {total === 0 ? (
+                                <p className="changes-empty">
+                                    These two versions are identical.
+                                </p>
+                            ) : (
+                                <ChangesList
+                                    changes={changes}
+                                    focusedId={focusedId}
+                                    onSelect={handleChangeClick}
+                                />
+                            )}
+                        </div>
+                    )}
                 </div>
             )}
         </div>
     );
 };
 
-// Apply diff markers to viewer
-function applyDiffMarkers(viewer, diffResult, side) {
-    const canvas = viewer.get('canvas');
-    const elementRegistry = viewer.get('elementRegistry');
-
-    // Added elements (only show in version B)
-    if (side === 'new') {
-        Object.keys(diffResult._added).forEach(id => {
-            const element = elementRegistry.get(id);
-            if (element) canvas.addMarker(id, 'diff-added');
-        });
-    }
-
-    // Removed elements (only show in version A)
-    if (side === 'old') {
-        Object.keys(diffResult._removed).forEach(id => {
-            const element = elementRegistry.get(id);
-            if (element) canvas.addMarker(id, 'diff-removed');
-        });
-    }
-
-    // Changed elements (show in both)
-    Object.keys(diffResult._changed).forEach(id => {
-        const element = elementRegistry.get(id);
-        if (element) canvas.addMarker(id, 'diff-changed');
-    });
-
-    // Layout changed (position/size changes)
-    Object.keys(diffResult._layoutChanged).forEach(id => {
-        const element = elementRegistry.get(id);
-        if (element) canvas.addMarker(id, 'diff-layout-changed');
+// ─── Marker helpers ───────────────────────────────────────────────────────────
+function clearMarkers(canvas, registry) {
+    registry.getAll().forEach(element => {
+        DIFF_MARKERS.forEach(marker => canvas.removeMarker(element.id, marker));
     });
 }
 
-// Changes list component
-function ChangesList({ changes }) {
-    const added = Object.keys(changes._added);
-    const removed = Object.keys(changes._removed);
-    const changed = Object.keys(changes._changed);
-    const layoutChanged = Object.keys(changes._layoutChanged);
+function addMarkerIfPresent(canvas, registry, id, marker) {
+    if (registry.get(id)) canvas.addMarker(id, marker);
+}
+
+// ─── Changes list ─────────────────────────────────────────────────────────────
+function ChangesList({ changes, focusedId, onSelect }) {
+    const groups = [
+        { key: "added",         title: "Added",          className: "added",   prefix: "+", items: changes.added },
+        { key: "removed",       title: "Removed",        className: "removed", prefix: "−", items: changes.removed },
+        { key: "changed",       title: "Changed",        className: "changed", prefix: "~", items: changes.changed },
+        { key: "layoutChanged", title: "Moved / Resized", className: "layout", prefix: "↔", items: changes.layoutChanged }
+    ];
 
     return (
         <div className="changes-content">
-            {added.length > 0 && (
-                <div className="change-group">
-                    <h4 className="change-group-title added">Added ({added.length})</h4>
-                    {added.map(id => (
-                        <div key={id} className="change-item added">+ {id}</div>
-                    ))}
-                </div>
-            )}
-            
-            {removed.length > 0 && (
-                <div className="change-group">
-                    <h4 className="change-group-title removed">Removed ({removed.length})</h4>
-                    {removed.map(id => (
-                        <div key={id} className="change-item removed">- {id}</div>
-                    ))}
-                </div>
-            )}
-            
-            {changed.length > 0 && (
-                <div className="change-group">
-                    <h4 className="change-group-title changed">Changed ({changed.length})</h4>
-                    {changed.map(id => (
-                        <div key={id} className="change-item changed">~ {id}</div>
-                    ))}
-                </div>
-            )}
-
-            {layoutChanged.length > 0 && (
-                <div className="change-group">
-                    <h4 className="change-group-title layout">Layout Changed ({layoutChanged.length})</h4>
-                    {layoutChanged.map(id => (
-                        <div key={id} className="change-item layout">↔ {id}</div>
-                    ))}
-                </div>
-            )}
+            {groups
+                .filter(group => group.items.length > 0)
+                .map(group => (
+                    <div key={group.key} className="change-group">
+                        <h4 className={`change-group-title ${group.className}`}>
+                            {group.title} ({group.items.length})
+                        </h4>
+                        {group.items.map(item => (
+                            <button
+                                key={item.id}
+                                type="button"
+                                title={item.id}
+                                className={`change-item ${group.className} ${focusedId === item.id ? "focused" : ""}`}
+                                onClick={() => onSelect(item.id)}
+                            >
+                                <span className="change-item-prefix">{group.prefix}</span>
+                                <span className="change-item-label">{item.label}</span>
+                                {item.attrs?.length > 0 && (
+                                    <span className="change-item-attrs">{item.attrs.join(", ")}</span>
+                                )}
+                            </button>
+                        ))}
+                    </div>
+                ))}
         </div>
     );
 }

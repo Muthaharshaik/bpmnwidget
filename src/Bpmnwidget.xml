@@ -48,6 +48,39 @@
                     <attributeType name="String"/>
                 </attributeTypes>
             </property>
+
+        </propertyGroup>
+
+        <!-- Compare mode: only used when Mode = Compare -->
+        <propertyGroup caption="Comparison">
+            <property key="compareXML" type="attribute" required="false">
+                <caption>Compare XML</caption>
+                <description>Only used when Mode is Compare. BPMN XML of the version the user picked in the dropdown. The widget compares it against BPMN XML.</description>
+                <attributeTypes>
+                    <attributeType name="String"/>
+                    <attributeType name="HashString"/>
+                </attributeTypes>
+            </property>
+
+            <property key="compareVersionName" type="attribute" required="false">
+                <caption>Compare Version Name</caption>
+                <description>Only used when Mode is Compare. Name of the selected version, e.g. v01. Shown as the heading above the compared diagram.</description>
+                <attributeTypes>
+                    <attributeType name="String"/>
+                    <attributeType name="Integer"/>
+                    <attributeType name="Long"/>
+                </attributeTypes>
+            </property>
+
+            <property key="currentVersionName" type="attribute" required="false">
+                <caption>Current Version Name</caption>
+                <description>Only used when Mode is Compare. Name of the current version, e.g. v03. Shown as the heading above the current diagram. Defaults to "Current".</description>
+                <attributeTypes>
+                    <attributeType name="String"/>
+                    <attributeType name="Integer"/>
+                    <attributeType name="Long"/>
+                </attributeTypes>
+            </property>
         </propertyGroup>
 
         <!-- Actions -->
@@ -85,10 +118,24 @@
                 <description>Action triggered when a task is clicked in the diagram. Use Selected Task ID attribute to get the task ID.</description>
             </property>
 
+            <property key="onCompareAction" type="action" required="false">
+                <caption>On Show Comparison</caption>
+                <description>Action triggered by Display > Show Comparison. Point this at the microflow that opens your comparison page. The menu item is hidden when this is left empty.</description>
+            </property>
+
         </propertyGroup>
 
         <!--Display-->
         <propertyGroup caption="Display">
+            <property key="mode" type="enumeration" defaultValue="editor">
+                <caption>Mode</caption>
+                <description>Editor shows the modelling canvas. Compare shows a read-only side-by-side comparison of BPMN XML against Compare XML - place the widget in Compare mode on a dedicated comparison page.</description>
+                <enumerationValues>
+                    <enumerationValue key="editor">Editor</enumerationValue>
+                    <enumerationValue key="compare">Compare</enumerationValue>
+                </enumerationValues>
+            </property>
+
             <property key="readOnly" type="boolean" defaultValue="false">
                 <caption>Read Only</caption>
                 <description>If true, the diagram cannot be edited</description>

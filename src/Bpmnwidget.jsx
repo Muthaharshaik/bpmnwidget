@@ -1,5 +1,6 @@
 import { createElement, useCallback, useMemo } from "react";
 import BpmnEditor from "./components/BpmnEditor";
+import { BpmnDiff } from "./components/BpmnDiff";
 import "./ui/Bpmnwidget.css";
 import "./ui/bpmn-styles.css";
 
@@ -9,10 +10,18 @@ import "./ui/bpmn-styles.css";
  * This is the entry point for the Mendix widget.
  * It connects Mendix properties to the React BpmnEditor component.
  *
+ * The widget has two modes, set by the Mode property:
+ * - editor  : the modelling canvas (default)
+ * - compare : read-only side-by-side comparison of BPMN XML vs Compare XML.
+ *             Meant for a dedicated comparison page, opened by the microflow
+ *             behind Display > Show Comparison.
+ *
  * Mendix Props:
  * - bpmnXML: EditableValue<string> - The BPMN XML attribute from entity
+ * - compareXML: EditableValue<string> - XML of the version selected in the dropdown
  * - onSaveAction: ActionValue - Mendix action to execute on save
  * - onCancelAction: ActionValue - Mendix action to execute on cancel
+ * - onCompareAction: ActionValue - Mendix action that opens the comparison page
  * - readOnly: boolean - Forces the diagram into read-only mode, same effect as a lock by another user
  * - class: string - CSS class from Mendix
  * - style: object - Style object from Mendix
@@ -21,21 +30,28 @@ import "./ui/bpmn-styles.css";
 
 export function Bpmnwidget(props) {
     const {
+        mode,
         bpmnXML,
         previewImageAttr,
         bpmnName,
         onSaveAction,
         onCancelAction,
         taskDataJson,
-        currentUserEmail,      
+        currentUserEmail,
         lockedUserEmail,
         selectedTaskId,
         onTaskClickAction,
+        onCompareAction,
+        compareXML,
+        compareVersionName,
+        currentVersionName,
         readOnly,
         class: className,
         style,
         tabIndex
     } = props;
+
+    const isCompareMode = mode === "compare";
 
     //Check if locked by another user
     const isLockedByAnotherUser = useMemo(() => {
@@ -75,6 +91,32 @@ export function Bpmnwidget(props) {
     }, [bpmnXML]);
 
     const currentBpmnName = bpmnName?.status === "available" ? bpmnName.value : null;
+
+    /**
+     * Compare mode only: XML of the version the user picked in the dropdown.
+     * Whitespace counts as empty, so a blank version does not get imported.
+     */
+    const compareXml = useMemo(() => {
+        if (compareXML && compareXML.status === "available" && compareXML.value && compareXML.value.trim()) {
+            return compareXML.value;
+        }
+        return null;
+    }, [compareXML]);
+
+    // displayValue so numeric version attributes render as well as strings
+    const compareVersionLabel = compareVersionName?.status === "available" ? compareVersionName.displayValue : null;
+    const currentVersionLabel = currentVersionName?.status === "available" ? currentVersionName.displayValue : null;
+
+    /**
+     * Handle Show Comparison
+     * Hands control to Mendix; the configured microflow is expected to open the
+     * comparison page, which hosts this same widget with Mode = Compare.
+     */
+    const handleCompare = useCallback(() => {
+        if (onCompareAction && onCompareAction.canExecute) {
+            onCompareAction.execute();
+        }
+    }, [onCompareAction]);
 
     const handleTaskAction = useCallback(
         (taskId) => {
@@ -163,6 +205,26 @@ export function Bpmnwidget(props) {
     }
 
     /**
+     * Compare mode
+     * Used on the dedicated comparison page. The editor, toolbar and modeler are
+     * never created here, so the page is read-only by construction: it only
+     * compares BPMN XML (current) against Compare XML (selected version).
+     */
+    if (isCompareMode) {
+        return (
+            <div className={`bpmn-widget ${className || ""}`} style={style} tabIndex={tabIndex}>
+                <BpmnDiff
+                    xmlA={currentXml}
+                    xmlB={compareXml}
+                    labelA={currentVersionLabel}
+                    labelB={compareVersionLabel}
+                    diagramName={currentBpmnName}
+                />
+            </div>
+        );
+    }
+
+    /**
      * Main render
      * Render the BpmnEditor component with props
      */
@@ -177,6 +239,7 @@ export function Bpmnwidget(props) {
                 taskDataJson={taskDataJson?.value}
                 isReadOnly={isReadOnly}
                 onTaskAction={handleTaskAction}
+                onCompare={onCompareAction ? handleCompare : undefined}
             />
         </div>
     );
