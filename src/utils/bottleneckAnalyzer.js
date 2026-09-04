@@ -1,16 +1,30 @@
+const UNIT_SECONDS = {
+    second: 1,
+    minute: 60,
+    hour: 3600,
+    day: 86400,
+    week: 604800
+};
+
 /**
- * Parse duration string "HH:MM" to total minutes
+ * Parse duration string "<amount> <unit>" (e.g. "12 Minute", "3 Hours") to total seconds.
+ * Seconds is used as the common unit so sub-minute durations are not lost.
  */
 export function parseDuration(durationString) {
     if (!durationString || durationString.trim() === "") return 0;
 
-    const parts = durationString.split(":");
+    const parts = durationString.trim().split(/\s+/);
     if (parts.length !== 2) return 0;
 
-    const hours = parseInt(parts[0], 10) || 0;
-    const minutes = parseInt(parts[1], 10) || 0;
+    const amount = parseFloat(parts[0]);
+    if (!isFinite(amount) || amount <= 0) return 0;
 
-    return hours * 60 + minutes;
+    // Normalize "Hours" / "hour" / "HOUR" to the map key
+    const unit = parts[1].toLowerCase().replace(/s$/, "");
+    const multiplier = UNIT_SECONDS[unit];
+    if (!multiplier) return 0;
+
+    return amount * multiplier;
 }
 
 /**
@@ -31,9 +45,9 @@ export function applyBottleneckColors(modeler, tasks) {
     const tasksWithDuration = tasks
         .map(task => ({
             ...task,
-            totalMinutes: parseDuration(task.duration)
+            totalSeconds: parseDuration(task.duration)
         }))
-        .filter(task => task.totalMinutes > 0);
+        .filter(task => task.totalSeconds > 0);
 
     if (tasksWithDuration.length === 0) {
         return;
@@ -44,8 +58,8 @@ export function applyBottleneckColors(modeler, tasks) {
     let bottleneckTask = null;
 
     for (const task of tasksWithDuration) {
-        if (task.totalMinutes > maxDuration) {
-            maxDuration = task.totalMinutes;
+        if (task.totalSeconds > maxDuration) {
+            maxDuration = task.totalSeconds;
             bottleneckTask = task;
         }
     }
