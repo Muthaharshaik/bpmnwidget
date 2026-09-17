@@ -555,7 +555,7 @@ export const BpmnEditor = ({
                                 className={`bpmn-btn bpmn-btn-icon bpmn-btn-toggle ${isMasterDataOn ? "active" : ""}`}
                                 onClick={() => { setIsMasterDataOn(prev => !prev); onToggle(); }}
                                 disabled={isLoading}
-                                title= {isMasterDataOn ? "EXit Focus Mode" : "Focus Mode"}
+                                title= {isMasterDataOn ? "Exit Focus Mode" : "Focus Mode"}
                                 aria-pressed={isMasterDataOn}
                             >
                                 <IconToggle />
