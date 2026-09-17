@@ -123,6 +123,11 @@
                 <description>Action triggered by Display > Show Comparison. Point this at the microflow that opens your comparison page. The menu item is hidden when this is left empty.</description>
             </property>
 
+            <property key="onToggleAction" type="action" required="false">
+                <caption>On Toggle Action </caption>
+                <description> Action triggered to control the Process map's master data</description>
+            </property>
+
         </propertyGroup>
 
         <!--Display-->

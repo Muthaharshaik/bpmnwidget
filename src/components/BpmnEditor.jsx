@@ -14,7 +14,8 @@ export const BpmnEditor = ({
     taskDataJson,
     isReadOnly,
     onTaskAction,
-    onCompare
+    onCompare,
+    onToggle
 }) => {
     // ─── State ────────────────────────────────────────────────────────────────
     const [error, setError]                         = useState(null);
@@ -31,6 +32,7 @@ export const BpmnEditor = ({
     const [isTaskDataApplied, setIsTaskDataApplied] = useState(false);
     const [showComments, setShowComments]           = useState(false);
     const [isTogglingComments, setIsTogglingComments] = useState(false);
+    const [isMasterDataOn, setIsMasterDataOn] = useState(false)
 
     // dropdown visibility
     const [showDisplayMenu, setShowDisplayMenu]     = useState(false);
@@ -487,6 +489,14 @@ export const BpmnEditor = ({
             <rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
         </svg>
     );
+    const IconToggle = () => (
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M4 9V6a2 2 0 0 1 2-2h3"/>
+            <path d="M15 4h3a2 2 0 0 1 2 2v3"/>
+            <path d="M20 15v3a2 2 0 0 1-2 2h-3"/>
+            <path d="M9 20H6a2 2 0 0 1-2-2v-3"/>
+        </svg>
+    );
 
     // ─── Render ───────────────────────────────────────────────────────────────
     return (
@@ -537,6 +547,20 @@ export const BpmnEditor = ({
                         >
                             <IconFit />
                         </button>
+
+                        {/* Toggle button */}
+                        {onToggle && (
+                            <button
+                                type="button"
+                                className={`bpmn-btn bpmn-btn-icon bpmn-btn-toggle ${isMasterDataOn ? "active" : ""}`}
+                                onClick={() => { setIsMasterDataOn(prev => !prev); onToggle(); }}
+                                disabled={isLoading}
+                                title= {isMasterDataOn ? "EXit Focus Mode" : "Focus Mode"}
+                                aria-pressed={isMasterDataOn}
+                            >
+                                <IconToggle />
+                            </button>
+                        )}
 
                         <div className="bpmn-toolbar-divider" />
 

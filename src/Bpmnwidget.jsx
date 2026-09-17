@@ -42,6 +42,7 @@ export function Bpmnwidget(props) {
         selectedTaskId,
         onTaskClickAction,
         onCompareAction,
+        onToggleAction,
         compareXML,
         compareVersionName,
         currentVersionName,
@@ -117,6 +118,15 @@ export function Bpmnwidget(props) {
             onCompareAction.execute();
         }
     }, [onCompareAction]);
+
+    /**
+     * Handle Toggle Action to display the process master data
+     */
+    const handleToggleAction = useCallback(() => {
+        if (onToggleAction && onToggleAction.canExecute) {
+            onToggleAction.execute();
+        }
+    },[onToggleAction])
 
     const handleTaskAction = useCallback(
         (taskId) => {
@@ -240,6 +250,7 @@ export function Bpmnwidget(props) {
                 isReadOnly={isReadOnly}
                 onTaskAction={handleTaskAction}
                 onCompare={onCompareAction ? handleCompare : undefined}
+                onToggle={onToggleAction ? handleToggleAction : undefined}
             />
         </div>
     );

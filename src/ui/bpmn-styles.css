@@ -2690,3 +2690,13 @@
     overflow: visible;
     margin: 0;
 }
+
+.bpmn-widget .bpmn-btn-toggle.active {
+    background-color: #1890ff;
+    color: #fff;
+    border-color: #1890ff;
+}
+
+.bpmn-widget .bpmn-btn-toggle.active:hover:not(:disabled) {
+    background-color: #40a9ff;
+}
