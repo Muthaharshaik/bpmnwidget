@@ -4,7 +4,7 @@ import { validationConfig } from "./validationConfig";
 import { getElementLabel, getTypeLabel, isLabel } from "./helpers";
 
 import { startEventRule } from "./rules/startEvent.rule";
-import { endEventRule } from "./rules/endEvent.rule";
+// import { endEventRule } from "./rules/endEvent.rule";
 import { orphanElementsRule } from "./rules/orphanElements.rule";
 import { taskMultipleOutgoingRule } from "./rules/taskOutgoing.rule";
 import { taskNameRequiredRule } from "./rules/taskName.rule";
@@ -12,7 +12,7 @@ import { gatewayOutgoingRule } from "./rules/gatewayOutgoing.rule";
 
 const ruleRegistry = {
     "start-event-required": startEventRule,
-    "end-event-required": endEventRule,
+    // "end-event-required": endEventRule,
     "task-name-required": taskNameRequiredRule,
     "gateway-min-outgoing": gatewayOutgoingRule,
     "no-orphan-elements": orphanElementsRule,

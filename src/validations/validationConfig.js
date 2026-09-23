@@ -4,7 +4,7 @@
 // Errors block saving, warnings do not.
 export const validationConfig = {
     "start-event-required": "error",
-    "end-event-required": "error",
+    // "end-event-required": "error",
     "task-name-required": "error",
     "gateway-min-outgoing": "error",
     "no-orphan-elements": "warning",
