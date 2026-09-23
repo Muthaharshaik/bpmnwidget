@@ -184,6 +184,35 @@ export const BpmnEditor = ({
         }
     };
 
+    // ─── Ctrl/Cmd + S → save the diagram ──────────────────────────────────────
+    // Held in a ref so the listener below is registered once, rather than being
+    // torn down and re-added every time handleSave is rebuilt. Mirrors the Save
+    // button's disabled state so the shortcut can't fire a second save mid-flight.
+    const saveShortcutRef = useRef(null);
+    useEffect(() => {
+        saveShortcutRef.current = (isSaving || isLoading) ? null : handleSave;
+    });
+
+    // Bound to the document (capture phase) rather than the canvas, so the
+    // shortcut works wherever focus sits — properties panel, comments, toolbar.
+    // While read-only there is nothing to save, so we stay out of the way and
+    // Ctrl+S keeps its browser meaning.
+    useEffect(() => {
+        if (isReadOnly || !onSave) return;
+
+        const handler = (e) => {
+            if (!(e.ctrlKey || e.metaKey) || e.altKey || e.shiftKey) return;
+            if (String(e.key).toLowerCase() !== "s") return;
+
+            e.preventDefault();
+            e.stopPropagation();
+            saveShortcutRef.current?.();
+        };
+
+        document.addEventListener("keydown", handler, true);
+        return () => document.removeEventListener("keydown", handler, true);
+    }, [isReadOnly, onSave]);
+
     const handleCancel = () => onCancel?.();
 
     // ─── Zoom ─────────────────────────────────────────────────────────────────
@@ -948,8 +977,9 @@ export const BpmnEditor = ({
                         <div className="keyboard-shortcuts-content">
                             <div className="shortcuts-section">
                                 {[
+                                    ...(onSave && !isReadOnly ? [["Save",  "Ctrl", "S"]] : []),
                                     ["Open file",              "Ctrl", "O"],
-                                    ["Download BPMN",          "Ctrl", "S"],
+                                    ["Download BPMN",          "Ctrl", "⇧", "S"],
                                     ["Download PDF",           "Ctrl", "D"],
                                     ["Download SVG",           "Ctrl", "I"],
                                     ["Undo",                   "Ctrl", "Z"],

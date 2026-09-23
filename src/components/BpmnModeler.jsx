@@ -288,11 +288,16 @@ export const BpmnModelerComponent = ({
                 const actions = editorActionsRef?.current;
                 if (!actions) return false;
 
-                // Ctrl + S → Download BPMN
-                if (key === "s") {
-                    keyEvent.preventDefault();
-                    actions.downloadBPMN?.();
-                    return true;
+                // Ctrl + Shift + S → Download BPMN
+                // (plain Ctrl + S is reserved for saving the diagram, handled
+                //  document-wide in BpmnEditor)
+                if (keyEvent.shiftKey) {
+                    if (key === "s") {
+                        keyEvent.preventDefault();
+                        actions.downloadBPMN?.();
+                        return true;
+                    }
+                    return false;
                 }
 
                 // Ctrl + D → Download PDF
