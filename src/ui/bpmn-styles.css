@@ -2722,3 +2722,7 @@
 .bpmn-widget .bpmn-btn-toggle.active:hover:not(:disabled) {
     background-color: #40a9ff;
 }
+
+.bjs-powered-by {
+    z-index: unset !important;
+}
