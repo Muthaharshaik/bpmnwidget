@@ -539,10 +539,12 @@ export const BpmnEditor = ({
                     <div className="bpmn-toolbar-left">
 
                         {/* Title */}
-                        <span className="bpmn-title">{bpmnFile}</span>
+                        <span className="bpmn-title" title={bpmnFile}>{bpmnFile}</span>
                         {isReadOnly && <span className="bpmn-readonly-badge">Read-Only</span>}
+                    </div>
 
-                        <div className="bpmn-toolbar-divider" />
+                    {/* ── CENTER (tools stay put regardless of title length) ── */}
+                    <div className="bpmn-toolbar-center">
 
                         {/* Zoom Out */}
                         <button
@@ -769,9 +771,6 @@ export const BpmnEditor = ({
                             </div>
                         )}
                     </div>
-
-                    {/* ── CENTER (empty — keeps grid balanced) ── */}
-                    <div className="bpmn-toolbar-center" />
 
                     {/* ── RIGHT ── */}
                     <div className="bpmn-toolbar-right">
