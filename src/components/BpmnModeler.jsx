@@ -177,12 +177,29 @@ export const BpmnModelerComponent = ({
                 eventBus.on("root.set", function () {});
 
                 fitAndCenter(modeler);
+                // A double-click (label editing) always starts with a click, so the
+                // task action is delayed and cancelled if a second click follows.
+                // Otherwise the microflow round-trip interrupts the name editor.
+                const DOUBLE_CLICK_DELAY = 250;
+                let clickTimer = null;
+                const cancelPendingClick = () => {
+                    clearTimeout(clickTimer);
+                    clickTimer = null;
+                };
+
                 eventBus.on("element.click", ({ element }) => {
+                    cancelPendingClick();
                     const type = element?.businessObject?.$type || "";
-                    if (type.endsWith("Task")) {
+                    if (!type.endsWith("Task")) return;
+
+                    clickTimer = setTimeout(() => {
+                        clickTimer = null;
+                        if (modeler.get("directEditing").isActive()) return;
                         onTaskActionRef.current?.(element.businessObject.id); // ← always fresh
-                    }
+                    }, DOUBLE_CLICK_DELAY);
                 });
+                eventBus.on("element.dblclick", cancelPendingClick);
+                eventBus.on("diagram.destroy", cancelPendingClick);
 
                 // Notify parent that modeler is ready
                 if (onModelerReady) {
